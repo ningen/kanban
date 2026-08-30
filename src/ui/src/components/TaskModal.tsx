@@ -3,7 +3,9 @@ import { STATUSES, type Status, type Task } from "../types";
 import { TextField } from "./ui/TextField";
 import { Textarea } from "./ui/Textarea";
 import { Select } from "./ui/Select";
+import { DateField } from "./ui/DateField";
 import { Button } from "./ui/Button";
+import { StatusDot } from "./ui/StatusDot";
 
 export function TaskModal({
   task,
@@ -39,7 +41,7 @@ export function TaskModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (title.trim().length === 0) {
-      setError("titleは必須です");
+      setError("Title is required");
       return;
     }
     setSaving(true);
@@ -67,7 +69,7 @@ export function TaskModal({
 
   return (
     <div
-      className="modal__overlay fixed inset-0 z-10 flex items-center justify-center bg-black/60 p-4"
+      className="modal__overlay fixed inset-0 z-10 flex items-start justify-center overflow-y-auto bg-black/40 p-6 pt-[8vh]"
       onClick={onCancel}
       role="presentation"
     >
@@ -77,69 +79,92 @@ export function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-label={isNew ? "New task" : "Edit task"}
-        className="modal flex max-h-[90vh] w-[520px] max-w-full flex-col gap-4 overflow-auto rounded-xl border border-border bg-surface p-5 shadow-lg"
+        className="modal flex w-[440px] max-w-full flex-col rounded-xl border border-border bg-surface shadow-2xl"
       >
-        <div className="flex items-center justify-between">
-          <h2 className="m-0 text-lg font-semibold">{isNew ? "New task" : "Edit task"}</h2>
-          <Button variant="ghost" size="icon" onClick={onCancel} aria-label="close">
-            ×
-          </Button>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <StatusDot status={status} />
+            <h2 className="m-0 text-sm font-semibold">
+              {isNew ? "New task" : "Edit task"}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="close"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-text-faint transition-colors hover:bg-surface-2 hover:text-text"
+          >
+            <CloseIcon />
+          </button>
         </div>
 
-        <TextField
-          ref={titleRef}
-          label="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="task title"
-          {...(error !== null ? { error } : {})}
-        />
+        {/* Body */}
+        <div className="flex flex-col gap-3.5 overflow-y-auto px-5 py-4">
+          <TextField
+            ref={titleRef}
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Task title"
+            {...(error !== null ? { error } : {})}
+          />
 
-        <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as Status)}>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as Status)}>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+            <DateField label="Due" value={due} onChange={setDue} />
+          </div>
 
-        <TextField
-          label="Tags (comma separated)"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="review, q3"
-        />
+          <TextField
+            label="Tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="review, q3"
+            hint="Comma separated"
+          />
 
-        <TextField
-          label="Due (YYYY-MM-DD)"
-          type="date"
-          value={due}
-          onChange={(e) => setDue(e.target.value)}
-        />
+          <Textarea
+            label="Notes"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
+            placeholder="Notes, context, progress…"
+          />
+        </div>
 
-        <Textarea
-          label="Notes"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={4}
-          placeholder="notes, progress, reasoning…"
-        />
-
-        <div className="mt-1 flex gap-2">
-          {!isNew && onArchive !== null && (
-            <Button variant="outline" onClick={() => void onArchive()}>
-              Archive
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border px-5 py-3.5">
+          <div>
+            {!isNew && onArchive !== null && (
+              <Button variant="ghost" size="sm" onClick={() => void onArchive()}>
+                Archive
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+              Cancel
             </Button>
-          )}
-          <div className="flex-1" />
-          <Button variant="ghost" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Save"}
-          </Button>
+            <Button type="submit" size="sm" disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
   );
 }

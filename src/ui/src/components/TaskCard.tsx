@@ -47,7 +47,6 @@ export function TaskCard({
     useSortable({ id: task.id, data: { status: task.status } });
 
   const isDone = task.status === "done";
-  const canArchive = task.status === "done" || task.status === "wontdo";
   const q = query ?? "";
 
   const style = {
@@ -87,12 +86,9 @@ export function TaskCard({
           ))}
         </div>
       )}
-      {(task.due !== undefined || canArchive) && (
+      {(task.due !== undefined) && (
         <div className="flex flex-wrap items-center gap-1.5">
           {task.due !== undefined && <DueBadge due={task.due} />}
-          {canArchive && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-text-faint">♲ archive</span>
-          )}
         </div>
       )}
       {task.updated !== "" && (

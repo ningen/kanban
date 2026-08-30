@@ -165,9 +165,11 @@ export function App() {
                 setQuery("");
                 setActiveTag(null);
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1 text-sm text-text-dim hover:text-text"
+              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-md text-text-faint hover:bg-surface-2 hover:text-text"
             >
-              ×
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
             </button>
           )}
         </div>
