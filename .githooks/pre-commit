@@ -12,9 +12,10 @@ set -eu
 
 echo "── kanban: running quality gate (typecheck + biome + tests) ──"
 
-# TypeScript strict type check.
-echo "▶ typecheck (tsc --noEmit)"
+# TypeScript strict type check (backend + frontend).
+echo "▶ typecheck (backend + ui)"
 bun run typecheck
+bun run typecheck:ui
 
 # Biome: lint + format + import sorting. Fails on rules violations.
 echo "▶ biome (lint + format)"

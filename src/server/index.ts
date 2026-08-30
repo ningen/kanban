@@ -6,8 +6,11 @@
  */
 
 import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
 import type { SSEMessage } from "hono/streaming";
 import { streamSSE } from "hono/streaming";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import {
   createTask,
   editTask,
@@ -23,6 +26,8 @@ import { isStatus, ACTOR_UI, type Status } from "../core/task";
 export interface ServerConfig {
   root: string;
   port?: number;
+  /** Directory of the built frontend to serve (e.g. dist/ui). */
+  staticDir?: string;
 }
 
 /** A minimal SSE writer interface so broadcast can be tested without live streams. */
@@ -60,7 +65,7 @@ async function boardState(root: string) {
 
 /** Build the kanban Hono app. Returns the app and its live subscriber set. */
 export function createApp(config: ServerConfig) {
-  const { root } = config;
+  const { root, staticDir } = config;
   const app = new Hono<{ Variables: { root: string } }>();
   const subscribers = new Set<SSEWriter>();
 
@@ -68,6 +73,9 @@ export function createApp(config: ServerConfig) {
     c.set("root", root);
     await next();
   });
+
+  // --- health check ---
+  app.get("/api/health", (c) => c.json({ ok: true }));
 
   // --- board snapshot ---
   app.get("/api/board", async (c) => {
@@ -107,9 +115,10 @@ export function createApp(config: ServerConfig) {
     const root = c.get("root");
     const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
     const status = isStatus(body.status) ? body.status : undefined;
+    const rank = typeof body.rank === "number" ? body.rank : undefined;
     // status change goes through moveTask to record the transition event
     if (status !== undefined) {
-      const moved = await moveTask(root, id, status, ACTOR_UI);
+      const moved = await moveTask(root, id, status, ACTOR_UI, rank === undefined ? undefined : { rank });
       if (moved.changed) {
         await broadcast(subscribers, JSON.stringify({ type: "change", id }));
       }
@@ -158,6 +167,21 @@ export function createApp(config: ServerConfig) {
       await stream.writeSSE({ data: JSON.stringify({ type: "connected" }) });
     });
   });
+
+  // --- static frontend (built UI) ---
+  if (staticDir !== undefined) {
+    app.use("/*", serveStatic({ root: staticDir }));
+    // SPA fallback: unmatched non-asset routes serve index.html
+    app.get("/*", async (c) => {
+      const path = join(staticDir, "index.html");
+      try {
+        const html = await readFile(path, "utf8");
+        return c.html(html);
+      } catch {
+        return c.text("Frontend not built. Run `bun run build` in src/ui.", 404);
+      }
+    });
+  }
 
   app.onError((err, c) => {
     console.error(err);

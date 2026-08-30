@@ -11,6 +11,8 @@ bun.lockb
 dist/
 build/
 *.tsbuildinfo
+src/ui/dist/
+src/ui/node_modules/
 
 # Coverage
 coverage/

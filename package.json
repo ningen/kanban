@@ -9,6 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "typecheck:ui": "cd src/ui && tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -16,7 +17,8 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage-reporter=lcov && bun run scripts/check-coverage.ts",
-    "quality": "bun run typecheck && bun run check:all && bun run test:coverage"
+    "build": "cd src/ui && tsc --noEmit && vite build",
+    "quality": "bun run typecheck && bun run typecheck:ui && bun run check:all && bun run test:coverage"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

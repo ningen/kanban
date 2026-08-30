@@ -13,7 +13,7 @@
  *   serve                         start the local web server
  */
 
-import { mkdirSync } from "node:fs";
+import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import {
@@ -286,7 +286,13 @@ export async function cmdDelete(
 
 async function cmdServe(root: string): Promise<void> {
   const { startServer } = await import("../server/index");
-  await startServer({ root });
+  // Serve the built frontend from the project's src/ui/dist if it exists.
+  const uiDist = join(import.meta.dir, "..", "ui", "dist");
+  if (existsSync(uiDist)) {
+    await startServer({ root, staticDir: uiDist });
+  } else {
+    await startServer({ root });
+  }
 }
 
 /** Run the CLI with the given args; returns a zero exit code or a CliError. */

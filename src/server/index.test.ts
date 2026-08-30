@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, spyOn } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createApp, broadcast, type SSEWriter } from "./index";
@@ -22,6 +22,13 @@ describe("server: board snapshot", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { tasks: unknown[] };
     expect(body.tasks).toEqual([]);
+  });
+
+  it("reports healthy via the health endpoint", async () => {
+    const { app } = createApp({ root });
+    const res = await app.request("/api/health");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
   });
 });
 
@@ -89,6 +96,34 @@ describe("server: get/update/move/archive/delete", () => {
 
     const events = await readEvents(root);
     expect(events.find((e) => e.field === "status" && e.from === "todo" && e.to === "doing")).toBeDefined();
+  });
+
+  it("PATCH with a rank reorders within a column", async () => {
+    const { app } = createApp({ root });
+    const a = (await (await app.request("/api/tasks", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "a", status: "doing", rank: 100 }),
+    })).json()) as { id: string };
+    const b = (await (await app.request("/api/tasks", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: "b", status: "doing", rank: 200 }),
+    })).json()) as { id: string };
+
+    // Move `b` before `a` (midpoint of nothing/100 -> rank 100 - 1024).
+    const res = await app.request(`/api/tasks/${b.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ status: "doing", rank: 50 }),
+    });
+    expect(res.status).toBe(200);
+    const moved = (await res.json()) as { rank: number };
+    expect(moved.rank).toBe(50);
+    const tasks = await listTasks(root);
+    expect(tasks[0]?.id).toBe(b.id);
+    // `a` is still in the column, just after `b`.
+    expect(tasks[1]?.id).toBe(a.id);
   });
 
   it("POST archive moves the task and returns 404 for unknown", async () => {
@@ -199,5 +234,38 @@ describe("server: onError", () => {
     const res = await app.request("/api/board");
     expect(res.status).toBe(500);
     errSpy.mockRestore();
+  });
+});
+
+describe("server: static frontend", () => {
+  it("serves the built index.html from the static dir", async () => {
+    const staticDir = join(root, "ui");
+    mkdirSync(staticDir, { recursive: true });
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(join(staticDir, "index.html"), "<html>hi</html>", "utf8");
+
+    const { app } = createApp({ root, staticDir });
+    const res = await app.request("/");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("hi");
+  });
+
+  it("serves an asset path from the static dir", async () => {
+    const staticDir = join(root, "ui");
+    mkdirSync(join(staticDir, "assets"), { recursive: true });
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(join(staticDir, "assets", "app.js"), "console.log(1)", "utf8");
+
+    const { app } = createApp({ root, staticDir });
+    const res = await app.request("/assets/app.js");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("console.log");
+  });
+
+  it("returns 404 when the static dir is missing index.html", async () => {
+    const staticDir = join(root, "ui-missing");
+    const { app } = createApp({ root, staticDir });
+    const res = await app.request("/");
+    expect(res.status).toBe(404);
   });
 });
