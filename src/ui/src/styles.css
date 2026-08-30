@@ -4,48 +4,61 @@
  * kanban design tokens.
  *
  * Colors are semantic: surfaces form a dark layering ramp (bg -> surface ->
- * surface-2 -> surface-3), text has two emphasis levels, and the status
- * palette drives the board accent. Accent colors are always paired with a
- * subtle `-soft` background token for badges and tints.
+ * surface-2 -> surface-3), text has three emphasis levels, and the status
+ * palette drives the board accent. The interaction accent (primary buttons,
+ * focus, active chips) is intentionally distinct from the "doing" status
+ * color so the two blues never collide. Every color uses oklch for perceptual
+ * uniformity and is paired (where used as a tint) with a soft background.
+ *
+ * Typography is tokenized via Tailwind's font/text/leading/tracking namespaces
+ * so the type scale is consistent and themeable.
  */
 @theme {
-  /* Surfaces: dark ramp, lowest to highest elevation. */
-  --color-bg: oklch(0.11 0.01 258);
-  --color-surface: oklch(0.14 0.012 258);
-  --color-surface-2: oklch(0.175 0.014 258);
+  /* Fonts: a compact, legible system stack with CJK-friendly fallbacks. */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI",
+    "Meiryo", sans-serif;
+
+  /* Surfaces: deep dark ramp, lowest to highest elevation. */
+  --color-bg: oklch(0.095 0.008 258);
+  --color-surface: oklch(0.135 0.012 258);
+  --color-surface-2: oklch(0.17 0.014 258);
   --color-surface-3: oklch(0.21 0.016 258);
 
-  /* Borders: a neutral stroke that works on both surfaces. */
-  --color-border: oklch(0.27 0.02 258);
-  --color-border-strong: oklch(0.36 0.022 258);
+  /* Borders: a neutral stroke that reads on both surfaces. */
+  --color-border: oklch(0.27 0.018 258);
+  --color-border-strong: oklch(0.38 0.022 258);
 
-  /* Text emphasis levels. */
-  --color-text: oklch(0.94 0.01 258);
-  --color-text-dim: oklch(0.68 0.02 258);
-  --color-text-faint: oklch(0.52 0.02 258);
+  /* Text emphasis: primary copy, secondary, and tertiary (faint/meta). */
+  --color-text: oklch(0.95 0.01 258);
+  --color-text-dim: oklch(0.75 0.02 258);
+  --color-text-faint: oklch(0.60 0.02 258);
 
-  /* Interaction accent (primary buttons, focus, active chips). */
-  --color-accent: oklch(0.62 0.18 258);
-  --color-accent-hover: oklch(0.68 0.19 258);
-  --color-accent-soft: oklch(0.3 0.09 258);
+  /* Interaction accent (primary buttons, focus rings, active states).
+     L=0.55 keeps white text above WCAG AA (>4.5:1) while staying vivid. */
+  --color-accent: oklch(0.55 0.21 250);
+  --color-accent-hover: oklch(0.62 0.21 250);
+  --color-accent-soft: oklch(0.3 0.09 250);
 
   /* Alert / destructive. */
-  --color-danger: oklch(0.64 0.2 20);
-  --color-danger-soft: oklch(0.3 0.08 20);
+  --color-danger: oklch(0.62 0.21 25);
+  --color-danger-soft: oklch(0.3 0.08 25);
 
-  /* Status palette (the board's semantic colors). */
+  /* Status palette. `doing` uses a distinct cyan so it never reads as the
+     interactive accent. `todo` stays neutral; `done` green; `waiting` amber;
+     `wontdo` violet. Soft variants back badges and tints. */
   --color-status-todo: oklch(0.68 0.02 258);
-  --color-status-doing: oklch(0.62 0.18 258);
+  --color-status-doing: oklch(0.72 0.15 205);
   --color-status-waiting: oklch(0.78 0.15 80);
-  --color-status-done: oklch(0.68 0.16 150);
-  --color-status-wontdo: oklch(0.66 0.18 310);
+  --color-status-done: oklch(0.7 0.16 150);
+  --color-status-wontdo: oklch(0.68 0.18 305);
 
-  /* Status soft backgrounds (for badges/tints). */
   --color-status-todo-soft: oklch(0.26 0.02 258);
-  --color-status-doing-soft: oklch(0.3 0.09 258);
+  --color-status-doing-soft: oklch(0.3 0.07 205);
   --color-status-waiting-soft: oklch(0.3 0.07 80);
   --color-status-done-soft: oklch(0.28 0.07 150);
-  --color-status-wontdo-soft: oklch(0.28 0.08 310);
+  --color-status-wontdo-soft: oklch(0.28 0.08 305);
 
   /* Radii: consistent, slightly-soft rounded system. */
   --radius-sm: 0.375rem;
@@ -54,9 +67,9 @@
   --radius-xl: 1rem;
 
   /* Elevation shadows tuned for the dark surfaces. */
-  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.3);
-  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.4), 0 2px 4px -2px oklch(0 0 0 / 0.3);
-  --shadow-lg: 0 12px 28px -6px oklch(0 0 0 / 0.5), 0 4px 10px -4px oklch(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.35);
+  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.45), 0 2px 4px -2px oklch(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 28px -6px oklch(0 0 0 / 0.55), 0 4px 10px -4px oklch(0 0 0 / 0.45);
 }
 
 /*
@@ -78,11 +91,12 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Per-status accent color shared by cards, columns, and badges. */
+/* Per-status accent color shared by cards, columns, and status dots. */
 .card {
   --status: var(--color-status-todo);
   border-left: 3px solid var(--status);
@@ -107,7 +121,7 @@ body {
 /* Tag color is driven by a per-tag hue custom property. */
 .card__tag {
   background: hsl(var(--tag-hue) 60% 24% / 100%);
-  color: hsl(var(--tag-hue) 75% 82% / 100%);
+  color: hsl(var(--tag-hue) 78% 82% / 100%);
 }
 
 .card__title--done {
