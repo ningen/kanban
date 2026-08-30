@@ -199,6 +199,7 @@ export function App() {
                 status={col.status}
                 label={col.label}
                 tasks={columnTasks}
+                query={query.trim()}
                 onAdd={() => openNew(col.status)}
                 onEdit={openEdit}
               />

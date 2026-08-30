@@ -7,12 +7,14 @@ export function BoardColumn({
   status,
   label,
   tasks,
+  query,
   onAdd,
   onEdit,
 }: {
   status: Status;
   label: string;
   tasks: Task[];
+  query: string;
   onAdd: () => void;
   onEdit: (task: Task) => void;
 }) {
@@ -41,12 +43,17 @@ export function BoardColumn({
           +
         </button>
       </header>
-      <div ref={setNodeRef} className="flex flex-col gap-2">
+      <div ref={setNodeRef} className="flex min-h-[120px] flex-col gap-2">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onEdit={onEdit} />
+            <TaskCard key={task.id} task={task} query={query} onEdit={onEdit} />
           ))}
         </SortableContext>
+        {tasks.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border/60 px-3 py-6 text-center text-xs text-text-dim/80">
+            なし
+          </div>
+        )}
       </div>
     </section>
   );

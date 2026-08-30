@@ -17,7 +17,7 @@ export const STATUS_COLOR: Record<Status, string> = {
   doing: "#4c8df6",
   waiting: "#e5a54b",
   done: "#2e9e5b",
-  wontdo: "#6b7280",
+  wontdo: "#b06bc9",
 };
 
 export interface Task {

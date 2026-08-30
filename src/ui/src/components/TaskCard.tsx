@@ -1,14 +1,42 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { ReactNode } from "react";
 import { type Task } from "../types";
 import { tagHue } from "../lib/tagColor";
 
+/** Wrap case-insensitive occurrences of `q` in `text` with <mark>. */
+function highlight(text: string, q: string): ReactNode {
+  if (q.length === 0) return text;
+  const lower = text.toLowerCase();
+  const needle = q.toLowerCase();
+  const parts: ReactNode[] = [];
+  let pos = 0;
+  let key = 0;
+  while (pos < text.length) {
+    const idx = lower.indexOf(needle, pos);
+    if (idx < 0) {
+      parts.push(text.slice(pos));
+      break;
+    }
+    if (idx > pos) parts.push(text.slice(pos, idx));
+    parts.push(
+      <mark key={key++} className="rounded bg-accent/30 px-0.5 text-accent">
+        {text.slice(idx, idx + needle.length)}
+      </mark>,
+    );
+    pos = idx + needle.length;
+  }
+  return parts;
+}
+
 export function TaskCard({
   task,
+  query,
   onEdit,
   overlay = false,
 }: {
   task: Task;
+  query?: string;
   onEdit?: (task: Task) => void;
   overlay?: boolean;
 }) {
@@ -18,6 +46,7 @@ export function TaskCard({
   const isDone = task.status === "done";
   const due = task.due !== undefined ? `due ${task.due}` : null;
   const canArchive = task.status === "done" || task.status === "wontdo";
+  const q = query ?? "";
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -43,7 +72,7 @@ export function TaskCard({
       }}
     >
       <div className={`text-sm font-semibold leading-snug ${isDone ? "card__title--done" : ""}`}>
-        {task.title}
+        {highlight(task.title, q)}
       </div>
       {task.tags.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">

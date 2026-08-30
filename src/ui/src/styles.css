@@ -11,7 +11,7 @@
   --color-accent: #4c8df6;
   --color-danger: #e5534b;
   --color-done: #2e9e5b;
-  --color-wontdo: #6b7280;
+  --color-wontdo: #b06bc9;
 }
 
 * {
@@ -34,13 +34,13 @@ body {
 .card--doing { --status: #4c8df6; }
 .card--waiting { --status: #e5a54b; }
 .card--done { --status: #2e9e5b; }
-.card--wontdo { --status: #6b7280; }
+.card--wontdo { --status: #b06bc9; }
 
 .column--todo { --status: #8b98a8; }
 .column--doing { --status: #4c8df6; }
 .column--waiting { --status: #e5a54b; }
 .column--done { --status: #2e9e5b; }
-.column--wontdo { --status: #6b7280; }
+.column--wontdo { --status: #b06bc9; }
 
 .column--over {
   border-color: var(--status, var(--color-accent));
