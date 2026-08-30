@@ -14,6 +14,8 @@ interface RichBodyProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /** Extra classes applied to the editor wrapper (e.g. to set a min-height). */
+  className?: string;
 }
 
 /**
@@ -22,11 +24,11 @@ interface RichBodyProps {
  * react-markdown (remark + rehype), which is safe by default and supports
  * GitHub-flavored Markdown (task lists, tables, strikethrough) via remark-gfm.
  */
-export function RichBody({ label, value, onChange, placeholder }: RichBodyProps) {
+export function RichBody({ label, value, onChange, placeholder, className }: RichBodyProps) {
   const [mode, setMode] = useState<BodyMode>("write");
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn("flex flex-col gap-1.5", className)}>
       <div className="flex items-center justify-between">
         {label !== undefined ? (
           <span className={fieldLabel}>{label}</span>
@@ -57,10 +59,10 @@ export function RichBody({ label, value, onChange, placeholder }: RichBodyProps)
           onChange={(e) => onChange(e.target.value)}
           rows={8}
           placeholder={placeholder ?? "Markdown で記述…"}
-          className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-[13px] leading-relaxed text-text placeholder:text-text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="min-h-[inherit] w-full flex-1 rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-[13px] leading-relaxed text-text placeholder:text-text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       ) : (
-        <div className="md-preview min-h-[8rem] w-full overflow-auto rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
+        <div className="md-preview min-h-[8rem] w-full flex-1 overflow-auto rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
           <Suspense fallback={<p className="text-text-faint">Loading preview…</p>}>
             <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
           </Suspense>

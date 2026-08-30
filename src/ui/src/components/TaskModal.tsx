@@ -69,7 +69,7 @@ export function TaskModal({
 
   return (
     <div
-      className="modal__overlay fixed inset-0 z-10 flex items-start justify-center overflow-y-auto bg-black/40 p-6 pt-[8vh]"
+      className="modal__overlay fixed inset-0 z-10 flex items-start justify-center overflow-y-auto bg-black/40 p-6 pt-[6vh]"
       onClick={onCancel}
       role="presentation"
     >
@@ -79,10 +79,10 @@ export function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-label={isNew ? "New task" : "Edit task"}
-        className="modal flex w-[620px] max-w-full flex-col rounded-xl border border-border bg-surface shadow-2xl"
+        className="modal flex h-[84vh] w-[840px] max-w-full flex-col rounded-xl border border-border bg-surface shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2.5">
             <StatusDot status={status} />
             <h2 className="m-0 text-sm font-semibold">
@@ -99,19 +99,36 @@ export function TaskModal({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex flex-col gap-3.5 overflow-y-auto px-5 py-4">
-          <TextField
-            ref={titleRef}
-            label="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Task title"
-            {...(error !== null ? { error } : {})}
-          />
+        {/* Two-column: main editor + metadata sidebar */}
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {/* Main: title + body (gets the remaining space) */}
+          <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+            <TextField
+              ref={titleRef}
+              label="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Task title"
+              {...(error !== null ? { error } : {})}
+            />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <RichBody
+                label="Notes"
+                value={body}
+                onChange={setBody}
+                className="min-h-[420px] flex-1"
+                placeholder={"Markdown で記述（# 見出し / - リスト / - [ ] タスク / `code`）…"}
+              />
+            </div>
+          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as Status)}>
+          {/* Sidebar: metadata */}
+          <div className="flex w-[220px] shrink-0 flex-col gap-4 overflow-y-auto border-l border-border px-5 py-5">
+            <Select
+              label="Status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Status)}
+            >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -119,26 +136,18 @@ export function TaskModal({
               ))}
             </Select>
             <DateField label="Due" value={due} onChange={setDue} />
+            <TextField
+              label="Tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="review, q3"
+              hint="Comma separated"
+            />
           </div>
-
-          <TextField
-            label="Tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="review, q3"
-            hint="Comma separated"
-          />
-
-          <RichBody
-            label="Notes"
-            value={body}
-            onChange={setBody}
-            placeholder={"Markdown で記述（# 見出し / - リスト / - [ ] タスク / `code`）…"}
-          />
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border px-5 py-3.5">
+        <div className="flex items-center justify-between border-t border-border px-6 py-3.5">
           <div>
             {!isNew && onArchive !== null && (
               <Button variant="ghost" size="sm" onClick={() => void onArchive()}>
