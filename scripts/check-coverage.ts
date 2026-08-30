@@ -63,9 +63,17 @@ function main(): void {
     process.exit(1);
   }
 
-  const files = parseLcov(readFileSync(lcovPath, "utf8"));
-  if (files.length === 0) {
+  const allFiles = parseLcov(readFileSync(lcovPath, "utf8"));
+  if (allFiles.length === 0) {
     console.error("No files found in coverage report.");
+    process.exit(1);
+  }
+
+  // The frontend is built and type-checked separately (src/ui has its own
+  // tsconfig/vite), so keep the backend coverage gate scoped to backend code.
+  const files = allFiles.filter((f) => !f.file.startsWith("src/ui/"));
+  if (files.length === 0) {
+    console.error("No backend files found in coverage report.");
     process.exit(1);
   }
 

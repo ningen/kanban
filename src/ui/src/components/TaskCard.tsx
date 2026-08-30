@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { type Task } from "../types";
 import { tagHue } from "../lib/tagColor";
 import { formatRelative } from "../lib/formatRelative";
+import { dueUrgency, dueUrgencyLabel } from "../lib/dueUrgency";
 
 /** Wrap case-insensitive occurrences of `q` in `text` with <mark>. */
 function highlight(text: string, q: string): ReactNode {
@@ -48,11 +49,20 @@ export function TaskCard({
   const due = task.due !== undefined ? `due ${task.due}` : null;
   const canArchive = task.status === "done" || task.status === "wontdo";
   const q = query ?? "";
+  const urgency = dueUrgency(task.due);
+  const urgencyLabel = dueUrgencyLabel(task.due);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const dueTone =
+    urgency === "overdue"
+      ? "text-danger bg-danger/15"
+      : urgency === "due-soon"
+        ? "text-amber-300 bg-amber-400/15"
+        : "";
 
   return (
     <div
@@ -90,7 +100,12 @@ export function TaskCard({
       )}
       {(due !== null || canArchive) && (
         <div className="mt-2 flex items-center gap-2 text-[11px] text-text-dim">
-          {due !== null && <span>{due}</span>}
+          {due !== null && (
+            <span className={`inline-flex items-center gap-1 rounded px-1 py-0.5 ${dueTone}`}>
+              {urgencyLabel !== null ? `${urgencyLabel} · ` : ""}
+              {due}
+            </span>
+          )}
           {canArchive && <span className="inline-flex items-center gap-1 text-wontdo">♲ archive</span>}
         </div>
       )}
