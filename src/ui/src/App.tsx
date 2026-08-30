@@ -21,6 +21,7 @@ import { BoardColumn } from "./components/BoardColumn";
 import { TaskCard } from "./components/TaskCard";
 import { TaskModal } from "./components/TaskModal";
 import { FilterChip } from "./components/ui/FilterChip";
+import { ThemeToggle } from "./components/ui/ThemeToggle";
 import { emptyTask } from "./lib/taskUtils";
 import "./styles.css";
 
@@ -146,6 +147,7 @@ export function App() {
     <div className="app mx-auto max-w-[1440px] min-h-screen p-4">
       <header className="flex items-center gap-4 py-3 pb-5">
         <h1 className="m-0 text-xl font-bold">kanban</h1>
+        <ThemeToggle />
         <div className="relative w-[360px] max-w-full flex-1">
           <input
             className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text"

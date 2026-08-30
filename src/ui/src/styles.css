@@ -1,27 +1,87 @@
 @import "tailwindcss";
 
 /*
- * kanban design tokens.
+ * kanban design system — themeable tokens.
  *
- * Colors are semantic: surfaces form a dark layering ramp (bg -> surface ->
- * surface-2 -> surface-3), text has three emphasis levels, and the status
- * palette drives the board accent. The interaction accent (primary buttons,
- * focus, active chips) is intentionally distinct from the "doing" status
- * color so the two blues never collide. Every color uses oklch for perceptual
- * uniformity and is paired (where used as a tint) with a soft background.
+ * Colors are semantic and theme-aware. Raw values live under the `--kb-*`
+ * prefix on `:root` (light) and `[data-theme="dark"]` (dark). `@theme inline`
+ * maps them to the `--color-*` tokens that Tailwind utilities reference, so
+ * `bg-surface-2`, `text-text-dim`, etc. automatically follow the theme with
+ * no `dark:` variants needed in component code.
  *
- * Typography is tokenized via Tailwind's font/text/leading/tracking namespaces
- * so the type scale is consistent and themeable.
+ * See docs/design-system.md for the full catalog and usage.
  */
-@theme {
-  /* Fonts: a compact, legible system stack with CJK-friendly fallbacks. */
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI",
-    "Meiryo", sans-serif;
 
-  /* Typography scale: sizes paired with line-heights, plus tracking.
-     Use semantic utilities (text-sm etc.) so the type ramp stays consistent. */
+/* Drive any `dark:*` utilities off the data-theme attribute (not prefers). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Raw theme values. Light = :root, Dark = [data-theme="dark"]. */
+:root {
+  --kb-bg: oklch(0.98 0.004 258);
+  --kb-surface: oklch(0.97 0.004 258);
+  --kb-surface-2: oklch(0.945 0.005 258);
+  --kb-surface-3: oklch(0.91 0.006 258);
+  --kb-border: oklch(0.87 0.008 258);
+  --kb-border-strong: oklch(0.75 0.012 258);
+  --kb-text: oklch(0.22 0.02 258);
+  --kb-text-dim: oklch(0.42 0.02 258);
+  --kb-text-faint: oklch(0.56 0.02 258);
+  --kb-accent: oklch(0.5 0.2 250);
+  --kb-accent-hover: oklch(0.44 0.2 250);
+  --kb-accent-soft: oklch(0.93 0.03 250);
+  --kb-danger: oklch(0.55 0.2 25);
+  --kb-danger-soft: oklch(0.95 0.03 25);
+  --kb-status-todo: oklch(0.5 0.03 258);
+  --kb-status-doing: oklch(0.55 0.16 205);
+  --kb-status-waiting: oklch(0.6 0.15 80);
+  --kb-status-done: oklch(0.52 0.15 150);
+  --kb-status-wontdo: oklch(0.5 0.17 305);
+  --kb-status-todo-soft: oklch(0.93 0.01 258);
+  --kb-status-doing-soft: oklch(0.92 0.04 205);
+  --kb-status-waiting-soft: oklch(0.93 0.04 80);
+  --kb-status-done-soft: oklch(0.91 0.04 150);
+  --kb-status-wontdo-soft: oklch(0.93 0.04 305);
+  --kb-shadow-sm: 0 1px 2px 0 oklch(0.2 0.02 258 / 0.08);
+  --kb-shadow-md: 0 4px 12px -2px oklch(0.2 0.02 258 / 0.1), 0 2px 4px -2px oklch(0.2 0.02 258 / 0.08);
+  --kb-shadow-lg: 0 12px 28px -6px oklch(0.2 0.02 258 / 0.14), 0 4px 10px -4px oklch(0.2 0.02 258 / 0.1);
+}
+
+[data-theme="dark"] {
+  --kb-bg: oklch(0.095 0.008 258);
+  --kb-surface: oklch(0.135 0.012 258);
+  --kb-surface-2: oklch(0.17 0.014 258);
+  --kb-surface-3: oklch(0.21 0.016 258);
+  --kb-border: oklch(0.27 0.018 258);
+  --kb-border-strong: oklch(0.38 0.022 258);
+  --kb-text: oklch(0.95 0.01 258);
+  --kb-text-dim: oklch(0.75 0.02 258);
+  --kb-text-faint: oklch(0.6 0.02 258);
+  --kb-accent: oklch(0.55 0.21 250);
+  --kb-accent-hover: oklch(0.62 0.21 250);
+  --kb-accent-soft: oklch(0.3 0.09 250);
+  --kb-danger: oklch(0.62 0.21 25);
+  --kb-danger-soft: oklch(0.3 0.08 25);
+  --kb-status-todo: oklch(0.68 0.02 258);
+  --kb-status-doing: oklch(0.72 0.15 205);
+  --kb-status-waiting: oklch(0.78 0.15 80);
+  --kb-status-done: oklch(0.7 0.16 150);
+  --kb-status-wontdo: oklch(0.68 0.18 305);
+  --kb-status-todo-soft: oklch(0.26 0.02 258);
+  --kb-status-doing-soft: oklch(0.3 0.07 205);
+  --kb-status-waiting-soft: oklch(0.3 0.07 80);
+  --kb-status-done-soft: oklch(0.28 0.07 150);
+  --kb-status-wontdo-soft: oklch(0.28 0.08 305);
+  --kb-shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.35);
+  --kb-shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.45), 0 2px 4px -2px oklch(0 0 0 / 0.35);
+  --kb-shadow-lg: 0 12px 28px -6px oklch(0 0 0 / 0.55), 0 4px 10px -4px oklch(0 0 0 / 0.45);
+}
+
+/* Static tokens: typography, spacing, radii. */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+    "Noto Sans JP", "Yu Gothic UI", "Meiryo", sans-serif;
+
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.1rem;
   --text-sm: 0.875rem;
@@ -45,62 +105,44 @@
   --tracking-wider: 0.05em;
   --tracking-widest: 0.1em;
 
-  /* Surfaces: deep dark ramp, lowest to highest elevation. */
-  --color-bg: oklch(0.095 0.008 258);
-  --color-surface: oklch(0.135 0.012 258);
-  --color-surface-2: oklch(0.17 0.014 258);
-  --color-surface-3: oklch(0.21 0.016 258);
-
-  /* Borders: a neutral stroke that reads on both surfaces. */
-  --color-border: oklch(0.27 0.018 258);
-  --color-border-strong: oklch(0.38 0.022 258);
-
-  /* Text emphasis: primary copy, secondary, and tertiary (faint/meta). */
-  --color-text: oklch(0.95 0.01 258);
-  --color-text-dim: oklch(0.75 0.02 258);
-  --color-text-faint: oklch(0.60 0.02 258);
-
-  /* Interaction accent (primary buttons, focus rings, active states).
-     L=0.55 keeps white text above WCAG AA (>4.5:1) while staying vivid. */
-  --color-accent: oklch(0.55 0.21 250);
-  --color-accent-hover: oklch(0.62 0.21 250);
-  --color-accent-soft: oklch(0.3 0.09 250);
-
-  /* Alert / destructive. */
-  --color-danger: oklch(0.62 0.21 25);
-  --color-danger-soft: oklch(0.3 0.08 25);
-
-  /* Status palette. `doing` uses a distinct cyan so it never reads as the
-     interactive accent. `todo` stays neutral; `done` green; `waiting` amber;
-     `wontdo` violet. Soft variants back badges and tints. */
-  --color-status-todo: oklch(0.68 0.02 258);
-  --color-status-doing: oklch(0.72 0.15 205);
-  --color-status-waiting: oklch(0.78 0.15 80);
-  --color-status-done: oklch(0.7 0.16 150);
-  --color-status-wontdo: oklch(0.68 0.18 305);
-
-  --color-status-todo-soft: oklch(0.26 0.02 258);
-  --color-status-doing-soft: oklch(0.3 0.07 205);
-  --color-status-waiting-soft: oklch(0.3 0.07 80);
-  --color-status-done-soft: oklch(0.28 0.07 150);
-  --color-status-wontdo-soft: oklch(0.28 0.08 305);
-
-  /* Radii: consistent, slightly-soft rounded system. */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-
-  /* Elevation shadows tuned for the dark surfaces. */
-  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.35);
-  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.45), 0 2px 4px -2px oklch(0 0 0 / 0.35);
-  --shadow-lg: 0 12px 28px -6px oklch(0 0 0 / 0.55), 0 4px 10px -4px oklch(0 0 0 / 0.45);
 }
 
-/*
- * Override Tailwind's flat button cursor back to pointer (v4 default is
- * default); buttons and anything with a button role should feel clickable.
- */
+/* Map theme-aware raw values to the color/shadow tokens utilities use. */
+@theme inline {
+  --color-bg: var(--kb-bg);
+  --color-surface: var(--kb-surface);
+  --color-surface-2: var(--kb-surface-2);
+  --color-surface-3: var(--kb-surface-3);
+  --color-border: var(--kb-border);
+  --color-border-strong: var(--kb-border-strong);
+  --color-text: var(--kb-text);
+  --color-text-dim: var(--kb-text-dim);
+  --color-text-faint: var(--kb-text-faint);
+  --color-accent: var(--kb-accent);
+  --color-accent-hover: var(--kb-accent-hover);
+  --color-accent-soft: var(--kb-accent-soft);
+  --color-danger: var(--kb-danger);
+  --color-danger-soft: var(--kb-danger-soft);
+  --color-status-todo: var(--kb-status-todo);
+  --color-status-doing: var(--kb-status-doing);
+  --color-status-waiting: var(--kb-status-waiting);
+  --color-status-done: var(--kb-status-done);
+  --color-status-wontdo: var(--kb-status-wontdo);
+  --color-status-todo-soft: var(--kb-status-todo-soft);
+  --color-status-doing-soft: var(--kb-status-doing-soft);
+  --color-status-waiting-soft: var(--kb-status-waiting-soft);
+  --color-status-done-soft: var(--kb-status-done-soft);
+  --color-status-wontdo-soft: var(--kb-status-wontdo-soft);
+  --shadow-sm: var(--kb-shadow-sm);
+  --shadow-md: var(--kb-shadow-md);
+  --shadow-lg: var(--kb-shadow-lg);
+}
+
+/* Buttons and anything with a button role should feel clickable. */
 @layer base {
   button:not(:disabled),
   [role="button"]:not(:disabled) {
@@ -161,10 +203,10 @@ body {
   box-shadow: 0 0 0 2px var(--status, var(--color-accent)) inset;
 }
 
-/* Tag color is driven by a per-tag hue custom property. */
+/* Tag color is driven by a per-tag hue custom property (light/dark agnostic). */
 .card__tag {
-  background: hsl(var(--tag-hue) 60% 24% / 100%);
-  color: hsl(var(--tag-hue) 78% 82% / 100%);
+  background: hsl(var(--tag-hue) 70% 90% / 100%);
+  color: hsl(var(--tag-hue) 45% 32% / 100%);
 }
 
 .card__title--done {
