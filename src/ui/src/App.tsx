@@ -20,6 +20,7 @@ import {
 import { BoardColumn } from "./components/BoardColumn";
 import { TaskCard } from "./components/TaskCard";
 import { TaskModal } from "./components/TaskModal";
+import { FilterChip } from "./components/ui/FilterChip";
 import { emptyTask } from "./lib/taskUtils";
 import "./styles.css";
 
@@ -170,19 +171,13 @@ export function App() {
         </div>
         <div className="flex flex-wrap gap-1.5">
           {allTags.map((tag) => (
-            <button
+            <FilterChip
               key={tag}
-              type="button"
-              aria-pressed={activeTag === tag}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                activeTag === tag
-                  ? "border-accent bg-accent text-white"
-                  : "border-border bg-surface text-text-dim hover:bg-surface-2"
-              }`}
+              active={activeTag === tag}
               onClick={() => setActiveTag(activeTag === tag ? null : tag)}
             >
               {tag}
-            </button>
+            </FilterChip>
           ))}
         </div>
       </header>

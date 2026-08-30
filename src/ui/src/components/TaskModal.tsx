@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { STATUSES, type Status, type Task } from "../types";
+import { TextField } from "./ui/TextField";
+import { Textarea } from "./ui/Textarea";
+import { Select } from "./ui/Select";
+import { Button } from "./ui/Button";
 
 export function TaskModal({
   task,
@@ -21,11 +25,10 @@ export function TaskModal({
   const [body, setBody] = useState(task.body ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
 
-  // Close on Escape and move focus into the dialog.
   useEffect(() => {
-    firstFieldRef.current?.focus();
+    titleRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancel();
     };
@@ -36,7 +39,7 @@ export function TaskModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (title.trim().length === 0) {
-      setError("title is required");
+      setError("titleは必須です");
       return;
     }
     setSaving(true);
@@ -62,12 +65,9 @@ export function TaskModal({
     }
   }
 
-  const field =
-    "rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text focus:border-accent focus:outline-none";
-
   return (
     <div
-      className="fixed inset-0 z-10 flex items-center justify-center bg-black/55 p-4"
+      className="fixed inset-0 z-10 flex items-center justify-center bg-black/60 p-4"
       onClick={onCancel}
       role="presentation"
     >
@@ -77,99 +77,67 @@ export function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-label={isNew ? "New task" : "Edit task"}
-        className="flex max-h-[90vh] w-[520px] max-w-full flex-col gap-3.5 overflow-auto rounded-2xl border border-border bg-surface p-5"
+        className="flex max-h-[90vh] w-[520px] max-w-full flex-col gap-4 overflow-auto rounded-xl border border-border bg-surface p-5 shadow-lg"
       >
         <div className="flex items-center justify-between">
-          <h2 className="m-0 text-lg">{isNew ? "New task" : "Edit task"}</h2>
-          <button
-            type="button"
-            aria-label="close"
-            onClick={onCancel}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-text-dim hover:bg-surface-2"
-          >
+          <h2 className="m-0 text-lg font-semibold">{isNew ? "New task" : "Edit task"}</h2>
+          <Button variant="ghost" size="icon" onClick={onCancel} aria-label="close">
             ×
-          </button>
+          </Button>
         </div>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-text-dim">Title</span>
-          <input
-            ref={firstFieldRef}
-            className={field}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="task title"
-          />
-        </label>
+        <TextField
+          ref={titleRef}
+          label="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="task title"
+          {...(error !== null ? { error } : {})}
+        />
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-text-dim">Status</span>
-          <select
-            className={field}
-            value={status}
-            onChange={(e) => setStatus(e.target.value as Status)}
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as Status)}>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </Select>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-text-dim">Tags (comma separated)</span>
-          <input
-            className={field}
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="review, q3"
-          />
-        </label>
+        <TextField
+          label="Tags (comma separated)"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="review, q3"
+        />
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-text-dim">Due (YYYY-MM-DD)</span>
-          <input type="date" className={field} value={due} onChange={(e) => setDue(e.target.value)} />
-        </label>
+        <TextField
+          label="Due (YYYY-MM-DD)"
+          type="date"
+          value={due}
+          onChange={(e) => setDue(e.target.value)}
+        />
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-text-dim">Notes</span>
-          <textarea
-            className={`${field} resize-y`}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={4}
-            placeholder="notes, progress, reasoning…"
-          />
-        </label>
-
-        {error !== null && <div className="text-sm text-danger">{error}</div>}
+        <Textarea
+          label="Notes"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={4}
+          placeholder="notes, progress, reasoning…"
+        />
 
         <div className="mt-1 flex gap-2">
           {!isNew && onArchive !== null && (
-            <button
-              type="button"
-              className="rounded-lg border border-border bg-transparent px-3.5 py-2 text-sm hover:brightness-110"
-              onClick={() => void onArchive()}
-            >
+            <Button variant="outline" onClick={() => void onArchive()}>
               Archive
-            </button>
+            </Button>
           )}
           <div className="flex-1" />
-          <button
-            type="button"
-            className="rounded-lg border border-border bg-transparent px-3.5 py-2 text-sm hover:brightness-110"
-            onClick={onCancel}
-          >
+          <Button variant="ghost" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            className="rounded-lg border border-accent bg-accent px-3.5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving}
-          >
+          </Button>
+          <Button type="submit" disabled={saving}>
             {saving ? "Saving…" : "Save"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

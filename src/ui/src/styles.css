@@ -1,17 +1,73 @@
 @import "tailwindcss";
 
-/* Design tokens: map the kanban palette to Tailwind theme colors. */
+/*
+ * kanban design tokens.
+ *
+ * Colors are semantic: surfaces form a dark layering ramp (bg -> surface ->
+ * surface-2 -> surface-3), text has two emphasis levels, and the status
+ * palette drives the board accent. Accent colors are always paired with a
+ * subtle `-soft` background token for badges and tints.
+ */
 @theme {
-  --color-bg: #0f1115;
-  --color-surface: #161a21;
-  --color-surface-2: #1e242f;
-  --color-border: #2a303d;
-  --color-text: #e6e9ef;
-  --color-text-dim: #9aa4b2;
-  --color-accent: #4c8df6;
-  --color-danger: #e5534b;
-  --color-done: #2e9e5b;
-  --color-wontdo: #b06bc9;
+  /* Surfaces: dark ramp, lowest to highest elevation. */
+  --color-bg: oklch(0.11 0.01 258);
+  --color-surface: oklch(0.14 0.012 258);
+  --color-surface-2: oklch(0.175 0.014 258);
+  --color-surface-3: oklch(0.21 0.016 258);
+
+  /* Borders: a neutral stroke that works on both surfaces. */
+  --color-border: oklch(0.27 0.02 258);
+  --color-border-strong: oklch(0.36 0.022 258);
+
+  /* Text emphasis levels. */
+  --color-text: oklch(0.94 0.01 258);
+  --color-text-dim: oklch(0.68 0.02 258);
+  --color-text-faint: oklch(0.52 0.02 258);
+
+  /* Interaction accent (primary buttons, focus, active chips). */
+  --color-accent: oklch(0.62 0.18 258);
+  --color-accent-hover: oklch(0.68 0.19 258);
+  --color-accent-soft: oklch(0.3 0.09 258);
+
+  /* Alert / destructive. */
+  --color-danger: oklch(0.64 0.2 20);
+  --color-danger-soft: oklch(0.3 0.08 20);
+
+  /* Status palette (the board's semantic colors). */
+  --color-status-todo: oklch(0.68 0.02 258);
+  --color-status-doing: oklch(0.62 0.18 258);
+  --color-status-waiting: oklch(0.78 0.15 80);
+  --color-status-done: oklch(0.68 0.16 150);
+  --color-status-wontdo: oklch(0.66 0.18 310);
+
+  /* Status soft backgrounds (for badges/tints). */
+  --color-status-todo-soft: oklch(0.26 0.02 258);
+  --color-status-doing-soft: oklch(0.3 0.09 258);
+  --color-status-waiting-soft: oklch(0.3 0.07 80);
+  --color-status-done-soft: oklch(0.28 0.07 150);
+  --color-status-wontdo-soft: oklch(0.28 0.08 310);
+
+  /* Radii: consistent, slightly-soft rounded system. */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Elevation shadows tuned for the dark surfaces. */
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+  --shadow-md: 0 4px 12px -2px oklch(0 0 0 / 0.4), 0 2px 4px -2px oklch(0 0 0 / 0.3);
+  --shadow-lg: 0 12px 28px -6px oklch(0 0 0 / 0.5), 0 4px 10px -4px oklch(0 0 0 / 0.4);
+}
+
+/*
+ * Override Tailwind's flat button cursor back to pointer (v4 default is
+ * default); buttons and anything with a button role should feel clickable.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 * {
@@ -23,24 +79,25 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Per-status accent color, set as a custom property on each card/column. */
+/* Per-status accent color shared by cards, columns, and badges. */
 .card {
-  --status: var(--border);
+  --status: var(--color-status-todo);
   border-left: 3px solid var(--status);
 }
-.card--todo { --status: #8b98a8; }
-.card--doing { --status: #4c8df6; }
-.card--waiting { --status: #e5a54b; }
-.card--done { --status: #2e9e5b; }
-.card--wontdo { --status: #b06bc9; }
+.card--todo { --status: var(--color-status-todo); }
+.card--doing { --status: var(--color-status-doing); }
+.card--waiting { --status: var(--color-status-waiting); }
+.card--done { --status: var(--color-status-done); }
+.card--wontdo { --status: var(--color-status-wontdo); }
 
-.column--todo { --status: #8b98a8; }
-.column--doing { --status: #4c8df6; }
-.column--waiting { --status: #e5a54b; }
-.column--done { --status: #2e9e5b; }
-.column--wontdo { --status: #b06bc9; }
+.column--todo { --status: var(--color-status-todo); }
+.column--doing { --status: var(--color-status-doing); }
+.column--waiting { --status: var(--color-status-waiting); }
+.column--done { --status: var(--color-status-done); }
+.column--wontdo { --status: var(--color-status-wontdo); }
 
 .column--over {
   border-color: var(--status, var(--color-accent));
@@ -49,8 +106,8 @@ body {
 
 /* Tag color is driven by a per-tag hue custom property. */
 .card__tag {
-  background: hsl(var(--tag-hue) 60% 22% / 100%);
-  color: hsl(var(--tag-hue) 70% 82% / 100%);
+  background: hsl(var(--tag-hue) 60% 24% / 100%);
+  color: hsl(var(--tag-hue) 75% 82% / 100%);
 }
 
 .card__title--done {

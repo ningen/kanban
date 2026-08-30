@@ -11,13 +11,29 @@ export const BOARD_COLUMNS: Array<{ status: Status; label: string }> = [
   { status: "wontdo", label: "WONT DO" },
 ];
 
-/** Column/accent color for each status. Drives the status bar + column tint. */
+/**
+ * CSS variable name for each status accent/soft color, matching `@theme` in
+ * styles.css. Keeping this as a mapping (rather than raw hex) makes the CSS
+ * the single source of truth for colors.
+ */
+export const STATUS_TONE: Record<
+  Status,
+  { accent: string; soft: string }
+> = {
+  todo: { accent: "var(--color-status-todo)", soft: "var(--color-status-todo-soft)" },
+  doing: { accent: "var(--color-status-doing)", soft: "var(--color-status-doing-soft)" },
+  waiting: { accent: "var(--color-status-waiting)", soft: "var(--color-status-waiting-soft)" },
+  done: { accent: "var(--color-status-done)", soft: "var(--color-status-done-soft)" },
+  wontdo: { accent: "var(--color-status-wontdo)", soft: "var(--color-status-wontdo-soft)" },
+};
+
+/** Backwards-compatible alias: a raw accent color per status. */
 export const STATUS_COLOR: Record<Status, string> = {
-  todo: "#8b98a8",
-  doing: "#4c8df6",
-  waiting: "#e5a54b",
-  done: "#2e9e5b",
-  wontdo: "#b06bc9",
+  todo: "var(--color-status-todo)",
+  doing: "var(--color-status-doing)",
+  waiting: "var(--color-status-waiting)",
+  done: "var(--color-status-done)",
+  wontdo: "var(--color-status-wontdo)",
 };
 
 export interface Task {
