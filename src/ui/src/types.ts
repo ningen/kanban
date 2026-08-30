@@ -11,6 +11,15 @@ export const BOARD_COLUMNS: Array<{ status: Status; label: string }> = [
   { status: "wontdo", label: "WONT DO" },
 ];
 
+/** Column/accent color for each status. Drives the status bar + column tint. */
+export const STATUS_COLOR: Record<Status, string> = {
+  todo: "#8b98a8",
+  doing: "#4c8df6",
+  waiting: "#e5a54b",
+  done: "#2e9e5b",
+  wontdo: "#6b7280",
+};
+
 export interface Task {
   id: string;
   title: string;

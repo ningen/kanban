@@ -138,25 +138,32 @@ export function App() {
   }
 
   if (loading && board === null) {
-    return <div className="app app--center">loading…</div>;
+    return <div className="app flex min-h-screen items-center justify-center">loading…</div>;
   }
 
   return (
-    <div className="app">
-      <header className="toolbar">
-        <h1 className="toolbar__title">kanban</h1>
+    <div className="app mx-auto max-w-[1440px] min-h-screen p-4">
+      <header className="flex items-center gap-4 py-3 pb-5">
+        <h1 className="m-0 text-xl font-bold">kanban</h1>
         <input
-          className="toolbar__search"
+          className="w-[360px] max-w-full flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-text"
           type="search"
           placeholder="検索…"
+          aria-label="検索"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <div className="toolbar__tags">
+        <div className="flex flex-wrap gap-1.5">
           {allTags.map((tag) => (
             <button
               key={tag}
-              className={`chip ${activeTag === tag ? "chip--active" : ""}`}
+              type="button"
+              aria-pressed={activeTag === tag}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                activeTag === tag
+                  ? "border-accent bg-accent text-white"
+                  : "border-border bg-surface text-text-dim hover:bg-surface-2"
+              }`}
               onClick={() => setActiveTag(activeTag === tag ? null : tag)}
             >
               {tag}
@@ -165,7 +172,11 @@ export function App() {
         </div>
       </header>
 
-      {error !== null && <div className="banner banner--error">error: {error}</div>}
+      {error !== null && (
+        <div className="mb-3 rounded-lg bg-danger/15 px-3 py-2 text-sm text-danger">
+          error: {error}
+        </div>
+      )}
 
       <DndContext
         sensors={sensors}
@@ -177,7 +188,7 @@ export function App() {
         onDragEnd={handleDragEnd}
         onDragCancel={() => setDragging(null)}
       >
-        <main className="board">
+        <main className="grid grid-cols-5 items-start gap-3">
           {BOARD_COLUMNS.map((col) => {
             const columnTasks = tasks
               .filter((t) => t.status === col.status)

@@ -1,6 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { Status, Task } from "../types";
+import { STATUS_COLOR, type Status, type Task } from "../types";
 import { TaskCard } from "./TaskCard";
 
 export function BoardColumn({
@@ -19,14 +19,29 @@ export function BoardColumn({
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
-    <section className={`column ${isOver ? "column--over" : ""}`}>
-      <header className="column__header">
-        <span className="column__label">{label}</span>
-        <button className="column__add" onClick={onAdd} aria-label={`add to ${label}`}>
+    <section
+      className={`column column--${status} flex flex-col gap-2 rounded-xl border border-border bg-surface p-2.5 min-h-[220px] transition-colors ${
+        isOver ? "column--over" : ""
+      }`}
+    >
+      <header className="flex items-center justify-between px-1 pb-2">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest text-text-dim">
+          <span
+            className="h-2 w-2 flex-none rounded-full"
+            style={{ background: STATUS_COLOR[status] }}
+          />
+          {label}
+        </span>
+        <button
+          type="button"
+          className="inline-flex h-7 min-w-[28px] items-center justify-center rounded-md text-lg text-accent hover:bg-surface-2"
+          onClick={onAdd}
+          aria-label={`add to ${label}`}
+        >
           +
         </button>
       </header>
-      <div ref={setNodeRef} className="column__cards">
+      <div ref={setNodeRef} className="flex flex-col gap-2">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} onEdit={onEdit} />
