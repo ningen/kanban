@@ -222,3 +222,5 @@ kanban/
 ## Related docs
 
 - Architecture decisions are persisted in `docs/adr/`.
+- The UI design system (tokens, primitives, semantics) is documented in `docs/design-system.md`.
+- Code quality and the toolchain are documented in `docs/quality.md`.
