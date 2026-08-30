@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { DndContext, type DragEndEvent, DragOverlay } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+  DragOverlay,
+} from "@dnd-kit/core";
 import { useBoard } from "./hooks/useBoard";
 import { computeMove, editTask, createTask, archiveTask, type CreatePayload, type EditPayload } from "./api";
 import {
@@ -38,6 +46,14 @@ export function App() {
     }
     return [...seen].sort();
   }, [board]);
+
+  // Require a small drag distance before a drag activates, so simple clicks
+  // bubble through to open the edit modal without starting a drag.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
 
   const tasks = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -151,10 +167,16 @@ export function App() {
 
       {error !== null && <div className="banner banner--error">error: {error}</div>}
 
-      <DndContext onDragStart={(e) => {
-        const task = board?.tasks.find((t) => t.id === e.active.id);
-        setDragging(task ?? null);
-      }} onDragEnd={handleDragEnd} onDragCancel={() => setDragging(null)}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={(e) => {
+          const task = board?.tasks.find((t) => t.id === e.active.id);
+          setDragging(task ?? null);
+        }}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setDragging(null)}
+      >
         <main className="board">
           {BOARD_COLUMNS.map((col) => {
             const columnTasks = tasks
