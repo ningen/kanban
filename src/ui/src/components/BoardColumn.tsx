@@ -33,6 +33,9 @@ export function BoardColumn({
             style={{ background: STATUS_COLOR[status] }}
           />
           {label}
+          <span className="rounded-full bg-surface-2 px-1.5 text-[10px] font-semibold text-text-dim">
+            {tasks.length}
+          </span>
         </span>
         <button
           type="button"

@@ -145,14 +145,29 @@ export function App() {
     <div className="app mx-auto max-w-[1440px] min-h-screen p-4">
       <header className="flex items-center gap-4 py-3 pb-5">
         <h1 className="m-0 text-xl font-bold">kanban</h1>
-        <input
-          className="w-[360px] max-w-full flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-text"
-          type="search"
-          placeholder="検索…"
-          aria-label="検索"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="relative w-[360px] max-w-full flex-1">
+          <input
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-text"
+            type="search"
+            placeholder="検索…"
+            aria-label="検索"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {(query.trim().length > 0 || activeTag !== null) && (
+            <button
+              type="button"
+              aria-label="検索とフィルタをクリア"
+              onClick={() => {
+                setQuery("");
+                setActiveTag(null);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1 text-sm text-text-dim hover:text-text"
+            >
+              ×
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {allTags.map((tag) => (
             <button

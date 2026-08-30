@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { ReactNode } from "react";
 import { type Task } from "../types";
 import { tagHue } from "../lib/tagColor";
+import { formatRelative } from "../lib/formatRelative";
 
 /** Wrap case-insensitive occurrences of `q` in `text` with <mark>. */
 function highlight(text: string, q: string): ReactNode {
@@ -91,6 +92,11 @@ export function TaskCard({
         <div className="mt-2 flex items-center gap-2 text-[11px] text-text-dim">
           {due !== null && <span>{due}</span>}
           {canArchive && <span className="inline-flex items-center gap-1 text-wontdo">♲ archive</span>}
+        </div>
+      )}
+      {task.updated !== "" && (
+        <div className="mt-1.5 text-[10px] text-text-dim/70" title={`updated ${task.updated}`}>
+          updated {formatRelative(task.updated)}
         </div>
       )}
     </div>
