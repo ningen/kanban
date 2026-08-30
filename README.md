@@ -146,11 +146,15 @@ Deferred: calendar, Gantt, stats dashboard (after `events.jsonl` fills), multi-u
 
 ## CLI
 
-The AI's primary path, usable by humans. `move` explicitly records the transition to `events.jsonl`.
+The AI's primary path, usable by humans. `move` explicitly records the transition to `events.jsonl`. `--json` emits structured JSON for programmatic use.
 
 ```
 kanban list                        # tree view
 kanban list --status doing        # filter
+kanban list --json                # structured JSON
+
+kanban show <uuid>                # task detail (with body)
+kanban show <uuid> --json
 
 kanban add "Title" \
   --status todo --rank 1 --tags review --due 2026-09-04
@@ -159,7 +163,10 @@ kanban edit <uuid> --status doing --rank 3.5 --due 2026-09-10
 
 kanban move <uuid> doing        # record transition
 
+kanban note <uuid> "progress…"   # append a Markdown note to the body
+
 kanban search "query"
+kanban search "query" --json
 
 kanban archive <uuid>
 
@@ -222,5 +229,6 @@ kanban/
 ## Related docs
 
 - Architecture decisions are persisted in `docs/adr/`.
+- The AI agent's CLI operating guide is in `docs/ai-cli.md`.
 - The UI design system (tokens, primitives, semantics) is documented in `docs/design-system.md`.
 - Code quality and the toolchain are documented in `docs/quality.md`.

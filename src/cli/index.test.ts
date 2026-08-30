@@ -74,6 +74,64 @@ describe("cli: list", () => {
     expect(lines.some((l) => l.includes("B"))).toBe(true);
     expect(lines.some((l) => l.includes("TODO"))).toBe(false);
   });
+
+  it("outputs JSON with --json", async () => {
+    await run(["add", "A", "--tags", "work"]);
+    const lines = await run(["list", "--json"]);
+    const json = lines.join("").trim();
+    const parsed = JSON.parse(json) as Array<{ title: string; tags: string[] }>;
+    expect(parsed.length).toBeGreaterThanOrEqual(1);
+    expect(parsed[0]?.title).toBe("A");
+    expect(parsed[0]?.tags).toEqual(["work"]);
+  });
+});
+
+describe("cli: show", () => {
+  it("prints a task with its body", async () => {
+    const lines = await run(["add", "Show me", "--body", "## 詳細"]);
+    const id = lines.join(" ").match(/[0-9a-f-]{36}/)?.[0];
+    if (id === undefined) throw new Error("could not read created id");
+    const out = await run(["show", id]);
+    expect(out.some((l) => l.includes("Show me"))).toBe(true);
+    expect(out.some((l) => l.includes("## 詳細"))).toBe(true);
+  });
+
+  it("outputs JSON with --json", async () => {
+    const lines = await run(["add", "JSON task"]);
+    const id = lines.join(" ").match(/[0-9a-f-]{36}/)?.[0];
+    if (id === undefined) throw new Error("could not read created id");
+    const out = await run(["show", id, "--json"]);
+    const parsed = JSON.parse(out.join("").trim()) as { title: string };
+    expect(parsed.title).toBe("JSON task");
+  });
+
+  it("throws for a missing task", async () => {
+    const msg = await runFail(["show", "0...missing"]);
+    expect(msg).toContain("Task not found");
+  });
+});
+
+describe("cli: note", () => {
+  it("appends a Markdown note to the body", async () => {
+    const lines = await run(["add", "Note target"]);
+    const id = lines.join(" ").match(/[0-9a-f-]{36}/)?.[0];
+    if (id === undefined) throw new Error("could not read created id");
+    const out = await run(["note", id, "- 進捗メモ", "を追加"]);
+    expect(out.some((l) => l.includes("Note added"))).toBe(true);
+    const show = await run(["show", id, "--json"]);
+    const parsed = JSON.parse(show.join("").trim()) as { body: string };
+    expect(parsed.body).toContain("進捗メモ を追加");
+  });
+
+  it("throws without args", async () => {
+    const msg = await runFail(["note"]);
+    expect(msg).toContain("Usage: kanban note");
+  });
+
+  it("throws for a missing task", async () => {
+    const msg = await runFail(["note", "0...missing", "x"]);
+    expect(msg).toContain("Task not found");
+  });
 });
 
 describe("cli: move", () => {
@@ -107,6 +165,16 @@ describe("cli: help + serve", () => {
   it("prints usage for the help command", async () => {
     const lines = await run(["help"]);
     expect(lines.some((l) => l.includes("list"))).toBe(true);
+  });
+
+  it("prints per-command help for `add --help`", async () => {
+    const lines = await run(["add", "--help"]);
+    expect(lines.some((l) => l.includes("kanban add"))).toBe(true);
+  });
+
+  it("prints per-command help for `note --help`", async () => {
+    const lines = await run(["note", "--help"]);
+    expect(lines.some((l) => l.includes("kanban note"))).toBe(true);
   });
 
   it("starts the server for the serve command", async () => {

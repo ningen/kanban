@@ -111,9 +111,33 @@ export async function editTask(
 }
 
 /**
- * Move a task to another status. Records the transition event and
- * recomputes `rank` in the destination column.
+ * Append a Markdown note to a task's body. This is used by `kanban note` so
+ * the AI/human can accumulate progress without replacing the whole body.
+ * Records the task's updated time.
  */
+export async function appendNote(
+  root: string,
+  id: string,
+  text: string,
+): Promise<Task | undefined> {
+  const task = await getTask(root, id);
+  if (task === undefined) return undefined;
+  const ts = now();
+
+  const clean = text.trim();
+  if (clean.length === 0) {
+    return task; // nothing to append
+  }
+  // Separate new note from existing body with a blank line when the body is
+  // non-empty and doesn't already end with a blank line.
+  const body = task.body ?? "";
+  const separator = body.length > 0 && !body.endsWith("\n\n") ? "\n\n" : "";
+  task.body = `${body}${separator}${clean}`;
+  task.updated = ts;
+
+  await writeTask(root, task);
+  return task;
+}
 export async function moveTask(
   root: string,
   id: string,

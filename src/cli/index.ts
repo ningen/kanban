@@ -2,15 +2,16 @@
  * kanban CLI — the primary interface for the AI agent (and usable by humans).
  *
  * Commands:
- *   list                          list active tasks (grouped)
- *   list --status doing           filter by status
+ *   list [--status doing] [--json]   list active tasks (grouped)
+ *   show <uuid> [--json]             show a task detail (with body)
  *   add "<title>" [--status todo] [--rank 1] [--tags a,b] [--due 2026-09-04]
  *   edit <uuid> [--title ...] [--status ...] [--rank ...] [--tags ...] [--due ...]
- *   move <uuid> <status>          transition and record event
- *   search <query>                search across titles/body/tags
- *   archive <uuid>                move to archive/
- *   delete <uuid>                 permanently remove
- *   serve                         start the local web server
+ *   move <uuid> <status>             transition and record event
+ *   note <uuid> <text>               append a Markdown note to the body
+ *   search <query> [--json]          search across titles/body/tags
+ *   archive <uuid>                   move to archive/
+ *   delete <uuid>                    permanently remove
+ *   serve                            start the local web server
  */
 
 import { mkdirSync, existsSync } from "node:fs";
@@ -24,6 +25,7 @@ import {
   remove,
   listTasks,
   getTask,
+  appendNote,
   type CreateInput,
   type EditInput,
 } from "../core/operations";
@@ -104,7 +106,26 @@ export function printTask(t: Task): void {
 }
 
 export const USAGE =
-  "Usage: kanban <command> [args]\nCommands: list, add, edit, move, search, archive, delete, serve";
+  "Usage: kanban <command> [args]\nCommands: list, show, add, edit, move, note, search, archive, delete, serve";
+
+/** Per-command help, keyed by command name. */
+export const COMMAND_HELP: Record<string, string> = {
+  list: "list [--status a,b] [--json]\n  List active tasks, grouped by column.",
+  show: "show <uuid> [--json]\n  Show a task's detail (including its body).",
+  add: 'add "<title>" [--status s] [--rank n] [--tags a,b] [--due 2026-09-04] [--body "…"]\n  Create a new task.',
+  edit: "edit <uuid> [--title …] [--status s] [--rank n] [--tags a,b] [--due d|null] [--body …]\n  Edit task fields. --status records a transition.",
+  move: "move <uuid> <status> [--rank n]\n  Move a task to a status and record the transition.",
+  note: "note <uuid> <text>\n  Append a Markdown note to the task's body.",
+  search: 'search "<query>" [--json]\n  Search titles, tags, and body text.',
+  archive: "archive <uuid>\n  Move a task to archive/.",
+  delete: "delete <uuid>\n  Permanently remove a task.",
+  serve: "serve\n  Start the local web server (serves the built UI if present).",
+};
+
+/** Pretty-print a task list as JSON (for programmatic/AI use). */
+function printTaskListJson(tasks: Task[]): void {
+  console.log(JSON.stringify(tasks, null, 2));
+}
 
 export async function cmdList(
   root: string,
@@ -113,6 +134,15 @@ export async function cmdList(
   const tasks = await listTasks(root);
   const statusFilter =
     typeof flags.status === "string" ? flags.status.split(",") : null;
+
+  if (flags.json === true) {
+    const filtered = statusFilter === null
+      ? tasks
+      : tasks.filter((t) => statusFilter.includes(t.status));
+    printTaskListJson(filtered);
+    return;
+  }
+
   const grouped = new Map<string, Task[]>();
   for (const t of tasks) {
     if (statusFilter !== null && !statusFilter.includes(t.status)) continue;
@@ -126,6 +156,31 @@ export async function cmdList(
     console.log(`${col.label}:`);
     for (const t of bucket) printTask(t);
     console.log("");
+  }
+}
+
+/** Show a single task in detail (with body). */
+export async function cmdShow(
+  root: string,
+  flags: Record<string, string | true>,
+  positional: string[],
+): Promise<void> {
+  const id = positional[0];
+  if (id === undefined) {
+    throw new CliError("Usage: kanban show <uuid>");
+  }
+  const task = await getTask(root, id);
+  if (task === undefined) {
+    throw new CliError(`Task not found: ${id}`);
+  }
+  if (flags.json === true) {
+    console.log(JSON.stringify(task, null, 2));
+    return;
+  }
+  printTask(task);
+  if (task.body !== undefined && task.body.length > 0) {
+    console.log("");
+    console.log(task.body);
   }
 }
 
@@ -231,7 +286,7 @@ export async function cmdMove(
 
 export async function cmdSearch(
   root: string,
-  _flags: Record<string, string | true>,
+  flags: Record<string, string | true>,
   positional: string[],
 ): Promise<void> {
   const query = positional.join(" ").toLowerCase();
@@ -245,11 +300,41 @@ export async function cmdSearch(
       t.tags.some((tag) => tag.toLowerCase().includes(query)) ||
       (t.body ?? "").toLowerCase().includes(query),
   );
+  if (flags.json === true) {
+    printTaskListJson(matches);
+    return;
+  }
   if (matches.length === 0) {
     console.log(`No matches for "${query}"`);
     return;
   }
   for (const t of matches) printTask(t);
+}
+
+/** Append a Markdown note to a task body. */
+export async function cmdNote(
+  root: string,
+  flags: Record<string, string | true>,
+  positional: string[],
+): Promise<void> {
+  const id = positional[0];
+  if (id === undefined) {
+    throw new CliError("Usage: kanban note <uuid> <text>");
+  }
+  const note = positional.slice(1).join(" ").trim();
+  if (note.length === 0) {
+    throw new CliError("Usage: kanban note <uuid> <text>");
+  }
+  const task = await appendNote(root, id, note);
+  if (task === undefined) {
+    throw new CliError(`Task not found: ${id}`);
+  }
+  if (flags.json === true) {
+    console.log(JSON.stringify(task, null, 2));
+    return;
+  }
+  console.log(`Note added to ${id}`);
+  printTask(task);
 }
 
 export async function cmdArchive(
@@ -304,10 +389,24 @@ export async function runCli(args: string[], root?: string): Promise<void> {
   mkdirSync(join(resolvedRoot, "tasks"), { recursive: true });
   mkdirSync(join(resolvedRoot, "archive"), { recursive: true });
 
+  // Per-command help: `kanban <cmd> --help` / `-h`.
+  if (flags.help === true || flags.h === true) {
+    const help = COMMAND_HELP[command];
+    if (help !== undefined) {
+      console.log(`kanban ${help}`);
+    } else {
+      console.log(USAGE);
+    }
+    return;
+  }
+
   switch (command) {
     case "list":
     case "ls":
       await cmdList(resolvedRoot, flags);
+      break;
+    case "show":
+      await cmdShow(resolvedRoot, flags, positional.slice(1));
       break;
     case "add": {
       const title = positional.slice(1).join(" ").trim();
@@ -320,6 +419,9 @@ export async function runCli(args: string[], root?: string): Promise<void> {
     case "move":
     case "mv":
       await cmdMove(resolvedRoot, flags, positional.slice(1));
+      break;
+    case "note":
+      await cmdNote(resolvedRoot, flags, positional.slice(1));
       break;
     case "search":
       await cmdSearch(resolvedRoot, flags, positional.slice(1));

@@ -15,7 +15,7 @@ import {
   appendEvent,
   readEvents,
 } from "./repo";
-import { createTask, editTask, moveTask, archive, remove, getTask } from "./operations";
+import { createTask, editTask, moveTask, archive, remove, getTask, appendNote } from "./operations";
 import { parseTask, type Task, type Status } from "./task";
 
 let root: string;
@@ -232,6 +232,38 @@ describe("operations: editTask", () => {
 
   it("returns undefined for a missing task", async () => {
     expect(await editTask(root, "0...missing", { title: "x" })).toBeUndefined();
+  });
+});
+
+describe("operations: appendNote", () => {
+  it("appends a note to an empty body", async () => {
+    const task = await createTask(root, { title: "x" }, "ui");
+    const updated = await appendNote(root, task.id, "- 進捗メモ");
+    expect(updated?.body).toBe("- 進捗メモ");
+    // body was empty -> appendNote sets it and bumps updated
+    expect(updated?.body).not.toBe(task.body);
+  });
+
+  it("separates notes with a blank line", async () => {
+    const task = await createTask(root, { title: "x", body: "## 状況" }, "ui");
+    const updated = await appendNote(root, task.id, "- 次のアクション");
+    expect(updated?.body).toContain("## 状況\n\n- 次のアクション");
+  });
+
+  it("does not double-separate when body already ends with a blank line", async () => {
+    const task = await createTask(root, { title: "x", body: "## 状況\n\n" }, "ui");
+    const updated = await appendNote(root, task.id, "- メモ");
+    expect(updated?.body).toBe("## 状況\n\n- メモ");
+  });
+
+  it("returns the task unchanged for empty note text", async () => {
+    const task = await createTask(root, { title: "x", body: "body" }, "ui");
+    const updated = await appendNote(root, task.id, "   ");
+    expect(updated?.body).toBe("body");
+  });
+
+  it("returns undefined for a missing task", async () => {
+    expect(await appendNote(root, "0...missing", "x")).toBeUndefined();
   });
 });
 
