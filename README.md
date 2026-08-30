@@ -1,204 +1,224 @@
 # kanban
 
-個人用のタスク管理ツール。人間は **Web UI** から確認・編集し、AI agent は **CLI** 経由で操作する。データの正 (source of truth) はローカルの **Markdown プレーンテキストファイル**。
+Personal task management. Human via Web UI, AI agent via CLI, plain-text Markdown as source of truth.
 
-単一ユーザー・ローカル実行・認証なしを前提とする。
+Single-user, local, no auth.
 
-## コンセプト
+## Concept
 
-- **人間** はブラウザ上のカンバンボードで、カードをドラッグして並べ替え・状態遷移を行う。
-- **AI agent** は `kanban` CLI を使うことで、決定的な操作・状態遷移の記録・統計データの取得を安全に行える。
-- **データの正はプレーンテキスト**。UI も CLI も、裏では同じ `tasks/*.md` を読み書きする。テキストファイルが人間と AI の「共通契約」になる。
+- **Human** uses a kanban board in the browser to reorder and transition cards.
+- **AI agent** uses the `kanban` CLI for deterministic operations, recording transitions and statistics safely.
+- **Source of truth is plain text.** The UI and CLI both read/write the same `tasks/*.md`. The text file is the shared contract between human and AI.
 
-AI の主経路は CLI とする。`tasks/*.md` は常に「正」である事実は不変だが、AI に生の Markdown をいじらせると競合制御・イベントログの整合を AI 側でも守る必要が生じる。CLI に閉じ込めることで決定論的な動作を担保する。
+The AI's primary path is the CLI. `tasks/*.md` remains the source of truth, but letting the AI touch raw Markdown would require it to also honor concurrency control and event-log consistency. Confining to the CLI makes behavior deterministic.
 
-## アーキテクチャ概要
+## Architecture overview
 
 ```
 ┌──────────────┐      ┌──────────────┐
-│  Web  UI      │      │  CLI          │
-│ (React 経由)  │      │ (AI agent)    │
+│  Web UI      │      │  CLI          │
+│ (React)      │      │ (AI agent)    │
 └──────┬───────┘      └──────┬───────┘
        │                      │
        ▼                      ▼
-   Bun + Hono サーバー
-       │  読み書き / watch / SSE
+   Bun + Hono server
+       │  read/write / watch / SSE
        ▼
-   tasks/<uuidv7>.md  ←── 正 (source of truth)
-   archive/           ←── 完了後
-   events.jsonl       ←── 追記専用の遷移・操作ログ
+   tasks/<uuidv7>.md  ←── source of truth
+   archive/           ←── archived
+   events.jsonl       ←── append-only transition/operation log
 ```
 
-UI / CLI / サーバーはすべて同じデータ契約を共有する。ファイルが常に正で、イベントログは副産物として自動的に溜まる。
+The UI, CLI, and server all share the same data contract. The files are always the source of truth, and the event log is accumulated as a byproduct.
 
-## データ契約
+## Data contract
 
-### ディレクトリ構造
+### Directory structure
 
 ```
 kanban/
 ├─ tasks/
-│   └─ <uuidv7>.md        # 現在状態のみ (正)
-├─ events.jsonl           # 追記専用ログ (汎用 field/from/to 形式)
-└─ archive/               # 完了後 (手動移動)
+│   └─ <uuidv7>.md        # current state only (source of truth)
+├─ archive/               # after completion (manual move)
+└─ events.jsonl           # append-only log (generic field/from/to)
 ```
 
-### タスクファイル
+### Task file
 
-1 タスク = 1 ファイル。ファイル名は不変の ID `<uuidv7>.md` のみ。タイトルを後から変えてもファイル名は変わらない。検索は `grep` で行い、UI 側はキャッシュを作る。
+1 task = 1 file. Filename is the immutable ID `<uuidv7>.md`. Renaming a task does not change the filename; searching uses grep + UI cache.
 
 ```markdown
 ---
 id: 019...uuidv7
 title: 四半期レビューの準備
 status: doing        # todo | doing | waiting | done | wontdo
-rank: 3.5            # 列内での並び順 (中間値方式)
+rank: 3.5            # in-column order (midpoint)
 tags: [review, q3]
 created: 2026-08-30
 updated: 2026-09-01
-completed: null      # done になった日
+completed: null      # date it became done
 ---
 
 ## 状況
-- 数字の棚卸しがまだ。@tanaka さんの資料待ち
+- ...
 
 ## 断念理由
-- 来期は方針転換で不要になった (wontdo の場合の任意記述)
+- ... (wontdo, optional)
 ```
 
-- **frontmatter** = 機械が読むための構造化フィールド。最小限に絞る。
-- **本文** = AI と人間が自由に書く場所。メモ・進捗・判断理由などを積む。
+- **frontmatter** = structured fields for machine read. Kept minimal.
+- **body** = free-form space for AI and human notes/progress/judgment.
 
-### 状態モデル
+### Status model
 
-| status    | 意味                                      | ボード表示              |
-|-----------|-------------------------------------------|------------------------|
-| `todo`    | 未着手                                      | 通常列                 |
-| `doing`   | 着手中。基本的に 1 個に絞る                     | 通常列                 |
-| `waiting` | 他人の回答待ち・条件未成熟                      | 通常列                 |
-| `done`    | 完了 (終端)。7 日を過ぎると表示上のみ消える       | 通常列 (7日以内のみ)    |
-| `wontdo`  | 断念・やらない (終端)。グレー表示                 | グレー列               |
+| status    | meaning                              | board display       |
+|-----------|--------------------------------------|---------------------|
+| `todo`    | not started                          | normal column       |
+| `doing`   | in progress (optimally one)          | normal column       |
+| `waiting` | waiting on others / condition        | normal column       |
+| `done`    | complete (terminal). hidden after 7d | normal (≤7 days)    |
+| `wontdo`  | declined (terminal). grey             | grey column         |
 
-- `done` / `wontdo` → `archive/` への移動は手動 (アーカイブボタン)。
-- `wontdo` の「断念理由」は本文の自由記述。frontmatter には構造化しない。
+- `done` / `wontdo` → `archive/` move is manual (archive button).
+- `wontdo` reason is free-form in the body, not structured in frontmatter.
 
-### 並び順 (rank)
+### Ordering (rank)
 
-- `priority` フィールドは持たない。代わりに列内の並び順を `rank` で表す。
-- カードを A と B の**間**にドロップしたら、A と B の rank の**中間値**を割り当てる (例: A=3, B=4 の間に置いたら 3.5)。
-- 他のカードを書き換えずに 1 枚の `rank` を変えるだけで並び替えできるため、競合が起きにくい。
-- 中間値を繰り返すと限界が来るため、要所で列ごとに振り直す (コンパクション)。これは UI 側の処理で、AI は rank の値を意識するだけでよい。
+- No `priority` field. In-column order is `rank`.
+- Dropping between A and B assigns the midpoint rank.
+- Only one card's `rank` changes per reorder → fewer races.
+- Midpoint repetition loses precision; periodic compaction per column is a UI-side concern.
 
-### イベントログ (events.jsonl)
+### Event log (events.jsonl)
 
-状態遷移・操作履歴は frontmatter ではなく、追記専用の `events.jsonl` に分離する。こうすることで後から「◯月に AI が何件を `waiting` に動かしたか」という構造化分析ができる。
+State transitions/operations are separated from frontmatter into an append-only `events.jsonl` so structural analysis ("how many did the AI move to `waiting` in March") becomes possible.
 
 ```jsonl
 {"ts":"2026-08-30T10:00Z","task":"019...","field":"status","from":"todo","to":"doing","actor":"ui"}
-{"ts":"2026-09-01T09:00Z","task":"019...","field":"status","from":"doing","to":"waiting","actor":"ai"}
 ```
 
-- **記録方法**: AI は Markdown を触るだけ。タスクファイルの `status` の変化をファイルウォッチャーが diff で検知し、自動で `events.jsonl` に追記する。ログは副産物。
-- **`actor`**: `ui` | `ai`。誰が触ったかを分析・監査できる。
-- **汎用形式**: `field` / `from` / `to` を持つ汎用形式にしてあるので、後から `rank` や `title` の変更も追える。
+- Recording: the AI only touches Markdown; a file watcher diffs `status` changes and appends automatically. The log is a byproduct.
+- `actor`: `ui` | `ai`, so AI involvement can be audited and quantified.
+- Generic `field`/`from`/`to` shape means it can later capture `rank`/`title` changes.
 
-## 競合制御
+## Concurrency control
 
-「人間と AI の同時編集」を楽観的ロック + 自動リロードで扱う。排他ロックは使わない。
+Human+AI simultaneous edits are handled with optimistic locking + auto-reload, no exclusive locks.
 
-- 書き込みはすべて「一時ファイルに書いて rename」(POSIX でアトミック)。
-- UI の保存は全文上書きではなく、ディスク上の現状を読み直して編集したフィールドだけを適用する。AI が触った「編集していないフィールド」は失われにくい。
-- 保存時に mtime / hash を比較し、開いた時から変わっていたら「競合」と判定。
-- **競合時の動作**: 保存を中断し、UI に最新を反映して「再編集してね」とトーストで知らせる。**人間の上書きは許可しない** (AI の変更を保全)。履歴は `git` と `events.jsonl` に残るため、必要なときは復元できる。
-- ブラウザは SSE でファイルを監視し、AI の変更をリアルタイムで通知する。
+- Writes are atomic (temp file → rename).
+- UI saves patch only the edited fields, not full overwrite → untouched fields edited by AI survive.
+- On save, mtime/hash compared since open; if changed, it's a conflict.
+- **On conflict**: abort the save, refresh UI, notify via toast. **No human overwrite allowed** (protects AI changes). `git` and `events.jsonl` preserve history for restore.
+- Browser watches files via SSE and receives AI changes in real time.
 
 ## Web UI (Vite + React + TypeScript)
 
-画面は実質 1 枚。ボードを主役にし、カード編集はその場で開くモーダルに閉じ込める。
+One screen. The board is the star; editing happens in a modal.
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  kanban                              [🔍検索] [🏷タグ絞り] │
-├─────────┬─────────┬─────────┬─────────┬───────────────┐
+┌────────────────────────────────────────────────────────┐
+│  kanban                              [🔍] [🏷]          │
+├─────────┬─────────┬─────────┬─────────┬───────────────┤
 │ TODO    │ DOING   │ WAITING │ DONE    │ WONT DO       │
-│ [+追加] │ [+追加] │ [+追加] │ (7日)   │ [+追加] (グレー)│
+│ [+add]  │ [+add]  │ [+add]  │ (7d)    │ [+add] (grey) │
 └─────────┴─────────┴─────────┴─────────┴───────────────┘
 ```
 
-搭載する機能 (MVP):
+Features (MVP):
 
-1. **カード表示** — タイトル・rank 順・タグ・期限。`done` は 7 日以内のもののみ表示。
-2. **列間ドラッグ & ドロップ** — `dnd-kit` で実装。ドロップ時に `status` と `rank` を自動計算してファイルに反映。
-3. **新規タスク追加** — `+ 追加` から。モーダルで入力し、保存で新ファイルを作成。
-4. **カードクリック → 編集モーダル** — title / tag / due / 本文を編集。ここで競合検出が走る。
-5. **アーカイブボタン** — `done` / `wontdo` カードを `archive/` へ移動。
-6. **検索・タグ絞り込み** — ヘッダーの検索ボックスとタグチップ。
-7. **SSE 自動リロード** — AI が裏で変えたら開いているボードに自動反映。
+1. **Card display** — title, rank order, tags, due. `done` only ≤7 days.
+2. **Drag & drop across columns** — `dnd-kit`; recomputes `status` + `rank`.
+3. **Add task** — via `+ 追加`; modal creates a new file.
+4. **Click card → edit modal** — title/tag/due/body. Concurrency check runs here.
+5. **Archive button** — move `done`/`wontdo` to `archive/`.
+6. **Search & tag filter** — header search box + tag chips.
+7. **SSE auto-reload** — reflects AI changes live.
 
-見送り: カレンダー・ガント図・統計ダッシュボード (`events.jsonl` が溜まった後で)、複数ユーザー・権限・モバイル最適化、期限のリマインド通知。
+Deferred: calendar, Gantt, stats dashboard (after `events.jsonl` fills), multi-user/permissions/mobile, due reminders.
 
-- ルーターも状態管理ライブラリも入れない。React の `useState` + サーバーの SSE だけ。
-- UI はボード 1 画面 + モーダル 1 個だけ。
+- No router or state-management library. `useState` + server SSE only.
+- UI = one board + one modal.
 
-## サーバー (Bun + Hono + TypeScript)
+## Server (Bun + Hono + TypeScript)
 
-- ファイル読み書き・watch・SSE・アトミック書き込み・`events.jsonl` への追記。
-- 起動: `kanban` コマンド → サーバー起動 → ブラウザで `localhost:3000` を自動で開く。
+- File read/write, watch, SSE, atomic writes, `events.jsonl` appends.
+- Start: `kanban` → starts server → auto-opens `localhost:3000`.
 
 ## CLI
 
-AI の主経路であり、人間も使える。`move` は状態遷移を明示して `events.jsonl` に記録する。
+The AI's primary path, usable by humans. `move` explicitly records the transition to `events.jsonl`.
 
 ```
-kanban list                        # 全タスクをツリー表示
-kanban list --status doing        # 絞り込み
+kanban list                        # tree view
+kanban list --status doing        # filter
 
-kanban add "四半期レビューの準備" \
+kanban add "Title" \
   --status todo --rank 1 --tags review --due 2026-09-04
 
 kanban edit <uuid> --status doing --rank 3.5 --due 2026-09-10
 
-kanban move <uuid> doing        # 遷移を events.jsonl に記録
+kanban move <uuid> doing        # record transition
 
-kanban search "レビュー"
+kanban search "query"
 
 kanban archive <uuid>
 
 kanban serve
 ```
 
-## 技術スタック
+## Tech stack
 
-| レイヤー | 技術 | 理由 |
-|----------|------|------|
-| サーバー | Bun + Hono + TypeScript | ファイル操作・watch・SSE が得意。起動爆速。CLI 化と相性◎ |
-| フロント | Vite + React + TypeScript | `dnd-kit` でカンバンのドラッグ&ドロップ、型をサーバーと共有 |
-| ドラッグ&ドロップ | dnd-kit | カンバン操作の実績が最も豊富。UX 優先のため |
-| データ | ローカル Markdown ファイル | 正。git がそのまま履歴・バックアップ |
+| layer     | tech                         | why |
+|-----------|------------------------------|-----|
+| server    | Bun + Hono + TypeScript      | file ops/watch/SSE, fast start, CLI-friendly |
+| frontend  | Vite + React + TypeScript    | `dnd-kit` board, share types with server |
+| drag/drop | dnd-kit                      | best-in-class kanban drag |
+| data      | local Markdown               | source of truth; git = history/backup |
 
-## ディレクトリ構成 (リポジトリ)
+## Quality gate
+
+The repo enforces high code quality with a strict, gated toolchain. See `docs/quality.md` for details.
+
+- **TypeScript**: strictest `tsconfig.json` (strict, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, no unused locals/params, ...).
+- **Lint + format**: [Biome](https://biomejs.dev) with `recommended` + all-rules-on categories (`suspicious`, `correctness`, `style`, `complexity`, `performance`).
+- **Tests + coverage**: `bun test` plus a deterministic gate (`scripts/check-coverage.ts`) that enforces lines/functions ≥90% globally and per-file.
+- **Commit gate**: `.githooks/pre-commit` runs `typecheck + biome + test:coverage`; git hooks are wired via `core.hooksPath`.
+
+```sh
+bun run quality    # typecheck + biome check + tests with coverage
+```
+
+## Development
+
+```sh
+bun install
+bun run test           # unit tests
+bun run typecheck      # strict type check
+bun run check:all      # biome lint + format check
+bun run quality        # everything, as the commit gate does
+```
+
+## Directory layout
 
 ```
 kanban/
+├─ .githooks/          # git hooks (pre-commit quality gate)
 ├─ docs/
-│   └─ adr/            # Architecture Decision Records
-├─ tasks/              # タスク正データ (runtime)
-├─ archive/            # 完了後 (runtime)
-├─ events.jsonl        # イベントログ (runtime)
+│  ├─ adr/             # Architecture Decision Records
+│  └─ quality.md       # toolchain & policy
+├─ scripts/
+│  └─ check-coverage.ts  # deterministic coverage gate (parses lcov)
 ├─ src/
-│   ├─ server/         # Bun + Hono
-│   └─ ui/             # Vite + React
-└─ README.md
+│  ├─ core/            # data contract: schema, repo, operations, uuidv7
+│  ├─ cli/             # kanban CLI
+│  └─ server/          # Bun + Hono (SSE)
+├─ tasks/ archive/ events.jsonl   # runtime data (gitignored)
+├─ biome.json
+├─ bunfig.toml
+├─ tsconfig.json
+└─ package.json
 ```
 
-## 開発ロードマップ (MVP)
+## Related docs
 
-1. データ契約の実装: タスクファイルの schema、`events.jsonl` の記録、アトミック書き込み。
-2. CLI: `add / list / edit / move / search / archive / serve`。
-3. サーバー: ファイル読み書き・watch・SSE。
-4. Web UI: 5 列ボード、dnd-kit ドラッグ&ドロップ、編集モーダル、検索・絞り込み、アーカイブ。
-5. AI 契約: `docs/adr/` に明文化。AI agent 向けの利用手順を整備。
-
-## 関連ドキュメント
-
-- アーキテクチャ上の決定は `docs/adr/` に ADR として永続化する。
+- Architecture decisions are persisted in `docs/adr/`.

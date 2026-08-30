@@ -1,0 +1,29 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Bun
+bun.lockb
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+*.lcov
+
+# Runtime data (task source of truth lives outside the repo by default,
+# but ignore in case it's created inside the project dir)
+tasks/
+archive/
+events.jsonl
+
+# Editor / OS
+.DS_Store
+.env
+.env.*
+!.env.example

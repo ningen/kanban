@@ -1,0 +1,27 @@
+#!/bin/sh
+# Pre-commit quality gate.
+#
+# Runs typecheck, lint+format check, and unit tests with a coverage threshold
+# before a commit is allowed. This blocks low-quality code from entering
+# history, matching the project's "fail the build, don't ship sloppy code"
+# policy.
+#
+# To bypass locally, use: git commit --no-verify
+
+set -eu
+
+echo "── kanban: running quality gate (typecheck + biome + tests) ──"
+
+# TypeScript strict type check.
+echo "▶ typecheck (tsc --noEmit)"
+bun run typecheck
+
+# Biome: lint + format + import sorting. Fails on rules violations.
+echo "▶ biome (lint + format)"
+bun run check:all
+
+# Unit tests plus a deterministic coverage threshold gate.
+echo "▶ tests with coverage"
+bun run test:coverage
+
+echo "── kanban: quality gate passed ──"
