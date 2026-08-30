@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { STATUSES, type Status, type Task } from "../types";
 import { TextField } from "./ui/TextField";
-import { Textarea } from "./ui/Textarea";
 import { Select } from "./ui/Select";
 import { DateField } from "./ui/DateField";
+import { RichBody } from "./ui/RichBody";
 import { Button } from "./ui/Button";
 import { StatusDot } from "./ui/StatusDot";
 
@@ -79,7 +79,7 @@ export function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-label={isNew ? "New task" : "Edit task"}
-        className="modal flex w-[440px] max-w-full flex-col rounded-xl border border-border bg-surface shadow-2xl"
+        className="modal flex w-[620px] max-w-full flex-col rounded-xl border border-border bg-surface shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
@@ -129,12 +129,11 @@ export function TaskModal({
             hint="Comma separated"
           />
 
-          <Textarea
+          <RichBody
             label="Notes"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={4}
-            placeholder="Notes, context, progress…"
+            onChange={setBody}
+            placeholder={"Markdown で記述（# 見出し / - リスト / - [ ] タスク / `code`）…"}
           />
         </div>
 
