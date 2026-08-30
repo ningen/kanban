@@ -67,7 +67,7 @@ export function TaskModal({
 
   return (
     <div
-      className="fixed inset-0 z-10 flex items-center justify-center bg-black/60 p-4"
+      className="modal__overlay fixed inset-0 z-10 flex items-center justify-center bg-black/60 p-4"
       onClick={onCancel}
       role="presentation"
     >
@@ -77,7 +77,7 @@ export function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-label={isNew ? "New task" : "Edit task"}
-        className="flex max-h-[90vh] w-[520px] max-w-full flex-col gap-4 overflow-auto rounded-xl border border-border bg-surface p-5 shadow-lg"
+        className="modal flex max-h-[90vh] w-[520px] max-w-full flex-col gap-4 overflow-auto rounded-xl border border-border bg-surface p-5 shadow-lg"
       >
         <div className="flex items-center justify-between">
           <h2 className="m-0 text-lg font-semibold">{isNew ? "New task" : "Edit task"}</h2>

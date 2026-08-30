@@ -67,7 +67,7 @@ export function TaskCard({
       className={cn(
         "card",
         `card--${task.status}`,
-        "flex w-full cursor-grab touch-none flex-col gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-2.5 shadow-sm",
+        "flex w-full cursor-grab touch-none flex-col gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-2.5 shadow-sm transition-all hover:border-border-strong hover:shadow-md",
         overlay && "card--overlay",
         isDragging && "card--dragging",
       )}
