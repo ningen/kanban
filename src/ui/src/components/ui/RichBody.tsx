@@ -1,9 +1,13 @@
-import { useState } from "react";
-import { renderMarkdown } from "../../lib/markdown";
+import { lazy, Suspense, useState } from "react";
+import remarkGfm from "remark-gfm";
 import { cn } from "../../lib/cn";
 import { fieldLabel } from "./fieldStyles";
 
 export type BodyMode = "write" | "preview";
+
+// react-markdown is loaded only when the Preview tab is opened, so the markdown
+// parser doesn't add to the initial bundle.
+const Markdown = lazy(() => import("react-markdown"));
 
 interface RichBodyProps {
   label?: string;
@@ -14,8 +18,9 @@ interface RichBodyProps {
 
 /**
  * Obsidian-style body editor: a "write / preview" split that shows either a
- * plain textarea (write) or a rendered Markdown view (preview). Preview is
- * produced by a safe, HTML-escaping Markdown renderer.
+ * plain textarea (write) or a rendered Markdown view (preview). Preview uses
+ * react-markdown (remark + rehype), which is safe by default and supports
+ * GitHub-flavored Markdown (task lists, tables, strikethrough) via remark-gfm.
  */
 export function RichBody({ label, value, onChange, placeholder }: RichBodyProps) {
   const [mode, setMode] = useState<BodyMode>("write");
@@ -55,10 +60,11 @@ export function RichBody({ label, value, onChange, placeholder }: RichBodyProps)
           className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-[13px] leading-relaxed text-text placeholder:text-text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       ) : (
-        <div
-          className="md-preview min-h-[8rem] w-full overflow-auto rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
-        />
+        <div className="md-preview min-h-[8rem] w-full overflow-auto rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
+          <Suspense fallback={<p className="text-text-faint">Loading preview…</p>}>
+            <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
+          </Suspense>
+        </div>
       )}
     </div>
   );
