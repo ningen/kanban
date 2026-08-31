@@ -1,22 +1,21 @@
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
-import { existsSync } from "node:fs";
-import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { appendNote, archive, createTask, editTask, getTask, moveTask, remove } from "./operations";
 import {
-  tasksDir,
+  appendEvent,
   archiveDir,
-  eventsFile,
-  listTasks,
-  listArchive,
-  writeTask,
   archiveTask,
   deleteTask,
-  appendEvent,
+  eventsFile,
+  listArchive,
+  listTasks,
   readEvents,
+  tasksDir,
+  writeTask,
 } from "./repo";
-import { createTask, editTask, moveTask, archive, remove, getTask, appendNote } from "./operations";
-import { parseTask, type Task, type Status } from "./task";
+import { parseTask, type Status, type Task } from "./task";
 
 let root: string;
 
@@ -87,10 +86,7 @@ describe("repo: writeTask + listTasks", () => {
   it("rejects a task whose id does not match its filename", async () => {
     await writeTask(root, makeTask({ id: "0...real" }));
     const { rename } = await import("node:fs/promises");
-    await rename(
-      join(tasksDir(root), "0...real.md"),
-      join(tasksDir(root), "0...renamed.md"),
-    );
+    await rename(join(tasksDir(root), "0...real.md"), join(tasksDir(root), "0...renamed.md"));
     await expect(listTasks(root)).resolves.toEqual([]);
   });
 });
@@ -132,8 +128,21 @@ describe("repo: archive & delete", () => {
 
 describe("repo: events", () => {
   it("appends and reads events (append-only)", async () => {
-    await appendEvent(root, { ts: "2026-08-30T10:00Z", task: "0...x", field: "status", to: "todo", actor: "ui" });
-    await appendEvent(root, { ts: "2026-08-30T11:00Z", task: "0...x", field: "status", from: "todo", to: "doing", actor: "ai" });
+    await appendEvent(root, {
+      ts: "2026-08-30T10:00Z",
+      task: "0...x",
+      field: "status",
+      to: "todo",
+      actor: "ui",
+    });
+    await appendEvent(root, {
+      ts: "2026-08-30T11:00Z",
+      task: "0...x",
+      field: "status",
+      from: "todo",
+      to: "doing",
+      actor: "ai",
+    });
     const events = await readEvents(root);
     expect(events).toHaveLength(2);
     expect(events[1]?.actor).toBe("ai");
@@ -146,7 +155,11 @@ describe("repo: events", () => {
 
   it("skips malformed lines", async () => {
     const { writeFile } = await import("node:fs/promises");
-    await writeFile(eventsFile(root), "not-json\n{\"ts\":\"t\",\"task\":\"id\",\"field\":\"status\",\"to\":\"todo\",\"actor\":\"ui\"}\n", "utf8");
+    await writeFile(
+      eventsFile(root),
+      'not-json\n{"ts":"t","task":"id","field":"status","to":"todo","actor":"ui"}\n',
+      "utf8",
+    );
     const events = await readEvents(root);
     expect(events).toHaveLength(1);
   });
@@ -198,9 +211,7 @@ describe("operations: moveTask", () => {
 
   it("throws on unknown status", async () => {
     const task = await createTask(root, { title: "x" }, "ui");
-    await expect(moveTask(root, task.id, "nope" as Status, "ui")).rejects.toThrow(
-      /Unknown status/,
-    );
+    await expect(moveTask(root, task.id, "nope" as Status, "ui")).rejects.toThrow(/Unknown status/);
   });
 
   it("throws when the task does not exist", async () => {

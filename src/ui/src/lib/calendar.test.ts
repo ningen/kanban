@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseDate, formatDate, monthGrid, shiftMonth, todayValue } from "./calendar";
+import { formatDate, monthGrid, parseDate, shiftMonth, todayValue } from "./calendar";
 
 describe("parseDate", () => {
   it("parses YYYY-MM-DD", () => {

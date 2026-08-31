@@ -5,23 +5,23 @@
  * SSE so the browser reflects AI changes without a manual refresh.
  */
 
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import type { SSEMessage } from "hono/streaming";
 import { streamSSE } from "hono/streaming";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import {
+  archive,
   createTask,
   editTask,
-  moveTask,
-  archive,
-  remove,
   getTask,
-  readEvents,
   listTasks,
+  moveTask,
+  readEvents,
+  remove,
 } from "../core/operations";
-import { isStatus, ACTOR_UI, type Status } from "../core/task";
+import { ACTOR_UI, isStatus, type Status } from "../core/task";
 
 export interface ServerConfig {
   root: string;
@@ -39,10 +39,7 @@ export interface SSEWriter {
  * Broadcast a message to all connected SSE clients. Fire-and-forget; a failing
  * (disconnected) subscriber is dropped.
  */
-export async function broadcast(
-  subscribers: Set<SSEWriter>,
-  message: string,
-): Promise<void> {
+export async function broadcast(subscribers: Set<SSEWriter>, message: string): Promise<void> {
   const dead: SSEWriter[] = [];
   for (const subscriber of subscribers) {
     try {
@@ -118,7 +115,13 @@ export function createApp(config: ServerConfig) {
     const rank = typeof body.rank === "number" ? body.rank : undefined;
     // status change goes through moveTask to record the transition event
     if (status !== undefined) {
-      const moved = await moveTask(root, id, status, ACTOR_UI, rank === undefined ? undefined : { rank });
+      const moved = await moveTask(
+        root,
+        id,
+        status,
+        ACTOR_UI,
+        rank === undefined ? undefined : { rank },
+      );
       if (moved.changed) {
         await broadcast(subscribers, JSON.stringify({ type: "change", id }));
       }

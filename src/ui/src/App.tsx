@@ -1,28 +1,29 @@
-import { useMemo, useState } from "react";
 import {
+  closestCenter,
   DndContext,
+  type DragEndEvent,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCenter,
-  type DragEndEvent,
-  DragOverlay,
 } from "@dnd-kit/core";
-import { useBoard } from "./hooks/useBoard";
-import { computeMove, editTask, createTask, archiveTask, type CreatePayload, type EditPayload } from "./api";
+import { useMemo, useState } from "react";
 import {
-  BOARD_COLUMNS,
-  DONE_VISIBLE_DAYS,
-  isStatus,
-  type Status,
-  type Task,
-} from "./types";
+  archiveTask,
+  type CreatePayload,
+  computeMove,
+  createTask,
+  type EditPayload,
+  editTask,
+} from "./api";
 import { BoardColumn } from "./components/BoardColumn";
 import { TaskCard } from "./components/TaskCard";
 import { TaskModal } from "./components/TaskModal";
 import { FilterChip } from "./components/ui/FilterChip";
 import { ThemeToggle } from "./components/ui/ThemeToggle";
+import { useBoard } from "./hooks/useBoard";
 import { emptyTask } from "./lib/taskUtils";
+import { BOARD_COLUMNS, DONE_VISIBLE_DAYS, isStatus, type Status, type Task } from "./types";
 import "./styles.css";
 
 /** Whether a `done` task is still within the visible window. */
@@ -167,7 +168,16 @@ export function App() {
               }}
               className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-md text-text-faint hover:bg-surface-2 hover:text-text"
             >
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <path d="M4 4l8 8M12 4l-8 8" />
               </svg>
             </button>
@@ -220,9 +230,7 @@ export function App() {
             );
           })}
         </main>
-        <DragOverlay>
-          {dragging !== null ? <TaskCard task={dragging} overlay /> : null}
-        </DragOverlay>
+        <DragOverlay>{dragging !== null ? <TaskCard task={dragging} overlay /> : null}</DragOverlay>
       </DndContext>
 
       {modal !== null && (

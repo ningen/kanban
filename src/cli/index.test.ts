@@ -1,10 +1,11 @@
-import { describe, expect, it, beforeEach, afterEach, spyOn } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { runCli, cliMain } from "./index";
-import { readEvents, listTasks } from "../core/operations";
+import { join } from "node:path";
+import process from "node:process";
+import { listTasks, readEvents } from "../core/operations";
 import { ACTOR_AI } from "../core/task";
+import { cliMain, runCli } from "./index";
 
 let root: string;
 

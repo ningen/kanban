@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach, afterEach, spyOn } from "bun:test";
-import { mkdtempSync, rmSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { createApp, broadcast, type SSEWriter } from "./index";
+import { join } from "node:path";
 import { listTasks, readEvents } from "../core/operations";
+import { broadcast, createApp, type SSEWriter } from "./index";
 
 let root: string;
 
@@ -95,21 +95,27 @@ describe("server: get/update/move/archive/delete", () => {
     expect(updated.status).toBe("doing");
 
     const events = await readEvents(root);
-    expect(events.find((e) => e.field === "status" && e.from === "todo" && e.to === "doing")).toBeDefined();
+    expect(
+      events.find((e) => e.field === "status" && e.from === "todo" && e.to === "doing"),
+    ).toBeDefined();
   });
 
   it("PATCH with a rank reorders within a column", async () => {
     const { app } = createApp({ root });
-    const a = (await (await app.request("/api/tasks", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title: "a", status: "doing", rank: 100 }),
-    })).json()) as { id: string };
-    const b = (await (await app.request("/api/tasks", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title: "b", status: "doing", rank: 200 }),
-    })).json()) as { id: string };
+    const a = (await (
+      await app.request("/api/tasks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "a", status: "doing", rank: 100 }),
+      })
+    ).json()) as { id: string };
+    const b = (await (
+      await app.request("/api/tasks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "b", status: "doing", rank: 200 }),
+      })
+    ).json()) as { id: string };
 
     // Move `b` before `a` (midpoint of nothing/100 -> rank 100 - 1024).
     const res = await app.request(`/api/tasks/${b.id}`, {

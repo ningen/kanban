@@ -5,17 +5,11 @@
  * file, then rename) and status transitions are recorded in `events.jsonl`.
  */
 
-import { existsSync, mkdirSync } from "node:fs";
-import { readdir, readFile, writeFile, rename, mkdir, rm, open } from "node:fs/promises";
-import { join, basename } from "node:path";
 import { randomUUID } from "node:crypto";
-import {
-  parseTask,
-  serializeTask,
-  type Task,
-  type Status,
-  type Event,
-} from "./task";
+import { existsSync, mkdirSync } from "node:fs";
+import { mkdir, open, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { basename, join } from "node:path";
+import { type Event, parseTask, type Status, serializeTask, type Task } from "./task";
 
 export function tasksDir(root: string): string {
   return join(root, "tasks");

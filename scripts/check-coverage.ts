@@ -10,8 +10,9 @@
  * the pre-commit hook deterministically.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -57,9 +58,7 @@ function pct(hit: number, found: number): number {
 
 function main(): void {
   if (!existsSync(lcovPath)) {
-    console.error(
-      "coverage/lcov.info not found. Run `bun test --coverage-reporter=lcov` first.",
-    );
+    console.error("coverage/lcov.info not found. Run `bun test --coverage-reporter=lcov` first.");
     process.exit(1);
   }
 

@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>kanban</title>
-    <script>
+    <script>"use strict";
       // Set the theme before first paint to avoid a flash (FOUC).
       // Priority: explicit localStorage choice > OS prefers-color-scheme > dark.
-      (function () {
+      (() => {
         try {
-          var stored = localStorage.getItem("kanban-theme");
-          var theme =
+          const stored = localStorage.getItem("kanban-theme");
+          const theme =
             stored === "light" || stored === "dark"
               ? stored
               : window.matchMedia("(prefers-color-scheme: light)").matches

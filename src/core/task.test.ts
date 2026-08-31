@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
+import { appendRank, midpointRank } from "./repo";
 import { parseTask, serializeTask } from "./task";
-import { uuidv7, isValidUuidv7, uuidv7Timestamp } from "./uuidv7";
-import { midpointRank, appendRank } from "./repo";
+import { isValidUuidv7, uuidv7, uuidv7Timestamp } from "./uuidv7";
 
 describe("uuidv7", () => {
   it("generates valid version-7 ids", () => {
@@ -20,7 +20,9 @@ describe("uuidv7", () => {
     const id = uuidv7();
     const ts = uuidv7Timestamp(id);
     expect(ts).not.toBeNull();
-    expect(Math.abs(ts! - Date.now())).toBeLessThan(10_000);
+    if (ts !== null) {
+      expect(Math.abs(ts - Date.now())).toBeLessThan(10_000);
+    }
   });
 });
 
@@ -75,11 +77,7 @@ describe("rank math", () => {
   });
 
   it("computes append rank past the max", () => {
-    const col = [
-      { rank: 1 },
-      { rank: 4 },
-      { rank: 2 },
-    ] as never[];
+    const col = [{ rank: 1 }, { rank: 4 }, { rank: 2 }] as never[];
     expect(appendRank(col as any)).toBe(4 + 1024);
     expect(appendRank([] as any)).toBe(2048);
   });

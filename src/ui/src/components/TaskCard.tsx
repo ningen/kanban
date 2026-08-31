@@ -1,11 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ReactNode } from "react";
-import type { Task } from "../types";
 import { cn } from "../lib/cn";
 import { formatRelative } from "../lib/formatRelative";
-import { Tag } from "./ui/Tag";
+import type { Task } from "../types";
 import { DueBadge } from "./ui/DueBadge";
+import { Tag } from "./ui/Tag";
 
 /** Wrap case-insensitive occurrences of `q` in `text` with <mark>. */
 function highlight(text: string, q: string): ReactNode {
@@ -43,8 +43,10 @@ export function TaskCard({
   onEdit?: (task: Task) => void;
   overlay?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id, data: { status: task.status } });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: { status: task.status },
+  });
 
   const isDone = task.status === "done";
   const q = query ?? "";
@@ -55,6 +57,7 @@ export function TaskCard({
   };
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: dnd-kit draggable; a <button> can't hold this nested block layout
     <div
       ref={overlay ? undefined : setNodeRef}
       style={overlay ? undefined : style}
@@ -86,7 +89,7 @@ export function TaskCard({
           ))}
         </div>
       )}
-      {(task.due !== undefined) && (
+      {task.due !== undefined && (
         <div className="flex flex-wrap items-center gap-1.5">
           {task.due !== undefined && <DueBadge due={task.due} />}
         </div>

@@ -1,17 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "../../lib/cn";
-import { fieldControl, fieldLabel } from "./fieldStyles";
 import {
   MONTH_NAMES,
-  WEEKDAYS,
   monthGrid,
   parseDate,
   shiftMonth,
   todayValue,
+  WEEKDAYS,
 } from "../../lib/calendar";
-import { popoverPosition, type PopoverPosition } from "../../lib/popover";
+import { cn } from "../../lib/cn";
+import { type PopoverPosition, popoverPosition } from "../../lib/popover";
 import { Button } from "./Button";
+import { fieldControl, fieldLabel } from "./fieldStyles";
 
 interface DateFieldProps {
   label?: string;
@@ -39,6 +39,9 @@ export function DateField({ label, value, onChange, placeholder }: DateFieldProp
   // container, so an absolutely-positioned panel would be clipped by it. Fixed
   // positioning against the trigger's viewport rect keeps the whole calendar
   // visible, and re-measuring on scroll/resize keeps it glued to the field.
+  // `grid.length` is not read inside the effect, but the row count it implies
+  // changes the panel's height, which is exactly what needs re-measuring.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the month grid changes height
   useLayoutEffect(() => {
     if (!open) {
       setPosition(null);
@@ -164,7 +167,10 @@ export function DateField({ label, value, onChange, placeholder }: DateFieldProp
                     </div>
                   ))}
                   {grid.map((day, i) => {
-                    if (day === "") return <div key={`b-${i}`} />;
+                    if (day === "") {
+                      // biome-ignore lint/suspicious/noArrayIndexKey: leading blanks are static placeholders, never reordered
+                      return <div key={`blank-${i}`} />;
+                    }
                     const isSelected = day === value;
                     const isToday = day === today;
                     return (
@@ -177,9 +183,7 @@ export function DateField({ label, value, onChange, placeholder }: DateFieldProp
                         }}
                         className={cn(
                           "mx-auto flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",
-                          isSelected
-                            ? "bg-accent text-white"
-                            : "text-text hover:bg-surface-2",
+                          isSelected ? "bg-accent text-white" : "text-text hover:bg-surface-2",
                           isToday && !isSelected && "font-semibold text-accent",
                         )}
                       >
@@ -228,13 +232,26 @@ function formatHuman(value: string): string {
   const d = parseDate(value);
   if (!d) return value;
   // e.g. "Sep 4, 2026" (short, en). Localized day names not required for MVP.
-  const s = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(d);
+  const s = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
   return s;
 }
 
 function CalendarIcon() {
   return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 16 16"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <rect x="2" y="3" width="12" height="11" rx="2" />
       <path d="M2 6h12M5 1.5V4M11 1.5V4" />
     </svg>
@@ -244,7 +261,17 @@ function CalendarIcon() {
 function ChevronIcon({ dir }: { dir: "left" | "right" }) {
   const d = dir === "left" ? "M10 3 5 8l5 5" : "M6 3l5 5-5 5";
   return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 16 16"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d={d} />
     </svg>
   );

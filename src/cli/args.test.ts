@@ -1,16 +1,17 @@
 import { describe, expect, it, spyOn } from "bun:test";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import process from "node:process";
 import {
+  type Args,
+  CliError,
   parseArgs,
   parseTags,
-  statusFromString,
-  resolveRoot,
   printTask,
+  resolveRoot,
+  statusFromString,
   USAGE,
-  CliError,
-  type Args,
 } from "./index";
-import { join } from "node:path";
-import { homedir } from "node:os";
 
 describe("cli: parseArgs", () => {
   it("supports --flag=value", () => {

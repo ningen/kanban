@@ -6,22 +6,15 @@
  */
 
 import {
-  appendRank,
   appendEvent,
+  appendRank,
   archiveTask,
   deleteTask,
   listTasks,
   readEvents,
   writeTask,
 } from "./repo";
-import {
-  isStatus,
-  isTerminal,
-  type Actor,
-  type Status,
-  type Task,
-  type Event,
-} from "./task";
+import { type Actor, type Event, isStatus, isTerminal, type Status, type Task } from "./task";
 import { uuidv7 } from "./uuidv7";
 
 export interface CreateInput {
@@ -197,6 +190,5 @@ export async function remove(root: string, id: string): Promise<boolean> {
   return deleteTask(root, id);
 }
 
+export type { Event, Status, Task };
 export { listTasks, readEvents };
-
-export type { Event, Task, Status };

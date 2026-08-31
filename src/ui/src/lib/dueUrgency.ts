@@ -27,7 +27,10 @@ function diffDays(a: string, b: string): number {
  * Classify how urgent a due date is. `undefined`/unparseable due dates are
  * treated as "normal" (no emphasis). Overdue results are stable within a day.
  */
-export function dueUrgency(due: string | undefined, clock: DueClock = { today: today() }): DueUrgency {
+export function dueUrgency(
+  due: string | undefined,
+  clock: DueClock = { today: today() },
+): DueUrgency {
   if (due === undefined) return "normal";
   const dueTs = Date.parse(`${due}T00:00:00`);
   if (Number.isNaN(dueTs)) return "normal";

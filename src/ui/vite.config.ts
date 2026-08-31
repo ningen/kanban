@@ -1,8 +1,9 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // Dev server proxies /api to the Bun+Hono backend (kanban serve on :3000).
+// biome-ignore lint/style/noDefaultExport: Vite loads its config from the default export
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {

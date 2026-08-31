@@ -16,10 +16,7 @@ export const BOARD_COLUMNS: Array<{ status: Status; label: string }> = [
  * styles.css. Keeping this as a mapping (rather than raw hex) makes the CSS
  * the single source of truth for colors.
  */
-export const STATUS_TONE: Record<
-  Status,
-  { accent: string; soft: string }
-> = {
+export const STATUS_TONE: Record<Status, { accent: string; soft: string }> = {
   todo: { accent: "var(--color-status-todo)", soft: "var(--color-status-todo-soft)" },
   doing: { accent: "var(--color-status-doing)", soft: "var(--color-status-doing-soft)" },
   waiting: { accent: "var(--color-status-waiting)", soft: "var(--color-status-waiting-soft)" },

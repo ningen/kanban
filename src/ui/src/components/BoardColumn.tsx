@@ -1,10 +1,10 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { Status, Task } from "../types";
 import { cn } from "../lib/cn";
+import type { Status, Task } from "../types";
+import { TaskCard } from "./TaskCard";
 import { Button } from "./ui/Button";
 import { StatusDot } from "./ui/StatusDot";
-import { TaskCard } from "./TaskCard";
 
 export function BoardColumn({
   status,
@@ -40,7 +40,13 @@ export function BoardColumn({
             {tasks.length}
           </span>
         </span>
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-accent" onClick={onAdd} aria-label={`add to ${label}`}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-accent"
+          onClick={onAdd}
+          aria-label={`add to ${label}`}
+        >
           +
         </Button>
       </header>

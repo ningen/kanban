@@ -1,4 +1,4 @@
-import { dueUrgency, dueUrgencyLabel, type DueClock } from "../../lib/dueUrgency";
+import { type DueClock, dueUrgency, dueUrgencyLabel } from "../../lib/dueUrgency";
 import { Badge } from "./Badge";
 
 /** URGENCY -> Tailwind badge variant mapping. */
@@ -9,13 +9,7 @@ const URGENCY_VARIANT = {
 } as const;
 
 /** Formats a task's due date as a color-coded badge (overdue/due-soon). */
-export function DueBadge({
-  due,
-  clock,
-}: {
-  due: string;
-  clock?: DueClock;
-}) {
+export function DueBadge({ due, clock }: { due: string; clock?: DueClock }) {
   const urgency = dueUrgency(due, clock);
   const label = dueUrgencyLabel(due, clock);
   const variant = URGENCY_VARIANT[urgency];

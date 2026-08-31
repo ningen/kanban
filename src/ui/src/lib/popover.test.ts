@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { popoverPosition, type PopoverGeometry } from "./popover";
+import { type PopoverGeometry, popoverPosition } from "./popover";
 
 /** A 280x345 calendar panel (the real `DateField` size). */
 const PANEL = { width: 280, height: 345 };

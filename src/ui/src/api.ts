@@ -1,4 +1,4 @@
-import { isStatus, type BoardState, type Status, type Task } from "./types";
+import { type BoardState, isStatus, type Status, type Task } from "./types";
 
 const BASE = "/api";
 

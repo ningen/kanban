@@ -30,11 +30,7 @@ export function RichBody({ label, value, onChange, placeholder, className }: Ric
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <div className="flex items-center justify-between">
-        {label !== undefined ? (
-          <span className={fieldLabel}>{label}</span>
-        ) : (
-          <span />
-        )}
+        {label !== undefined ? <span className={fieldLabel}>{label}</span> : <span />}
         <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5">
           {(["write", "preview"] as const).map((m) => (
             <button

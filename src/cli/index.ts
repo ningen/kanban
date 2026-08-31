@@ -14,28 +14,23 @@
  *   serve                            start the local web server
  */
 
-import { mkdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
+import { join } from "node:path";
+import process from "node:process";
 import {
-  createTask,
-  editTask,
-  moveTask,
-  archive,
-  remove,
-  listTasks,
-  getTask,
   appendNote,
+  archive,
   type CreateInput,
+  createTask,
   type EditInput,
+  editTask,
+  getTask,
+  listTasks,
+  moveTask,
+  remove,
 } from "../core/operations";
-import {
-  isStatus,
-  BOARD_COLUMNS,
-  ACTOR_AI,
-  type Status,
-  type Task,
-} from "../core/task";
+import { ACTOR_AI, BOARD_COLUMNS, isStatus, type Status, type Task } from "../core/task";
 
 /** Errors that should surface as a usage/exit-1 message, not a stack trace. */
 export class CliError extends Error {}
@@ -127,18 +122,13 @@ function printTaskListJson(tasks: Task[]): void {
   console.log(JSON.stringify(tasks, null, 2));
 }
 
-export async function cmdList(
-  root: string,
-  flags: Record<string, string | true>,
-): Promise<void> {
+export async function cmdList(root: string, flags: Record<string, string | true>): Promise<void> {
   const tasks = await listTasks(root);
-  const statusFilter =
-    typeof flags.status === "string" ? flags.status.split(",") : null;
+  const statusFilter = typeof flags.status === "string" ? flags.status.split(",") : null;
 
   if (flags.json === true) {
-    const filtered = statusFilter === null
-      ? tasks
-      : tasks.filter((t) => statusFilter.includes(t.status));
+    const filtered =
+      statusFilter === null ? tasks : tasks.filter((t) => statusFilter.includes(t.status));
     printTaskListJson(filtered);
     return;
   }
@@ -200,7 +190,9 @@ export async function cmdAdd(
   titleArg: string | undefined,
 ): Promise<void> {
   if (titleArg === undefined || titleArg.length === 0) {
-    throw new CliError('Usage: kanban add "<title>" [--status todo] [--rank 1] [--tags a,b] [--due 2026-09-04]');
+    throw new CliError(
+      'Usage: kanban add "<title>" [--status todo] [--rank 1] [--tags a,b] [--due 2026-09-04]',
+    );
   }
   const status = flagString(flags, "status");
   const rank = flagNumber(flags, "rank");
@@ -227,7 +219,9 @@ export async function cmdEdit(
 ): Promise<void> {
   const id = positional[0];
   if (id === undefined) {
-    throw new CliError('Usage: kanban edit <uuid> [--title ...] [--status ...] [--rank ...] [--tags ...] [--due ...]');
+    throw new CliError(
+      "Usage: kanban edit <uuid> [--title ...] [--status ...] [--rank ...] [--tags ...] [--due ...]",
+    );
   }
   // Support status change via edit as well.
   const status = flagString(flags, "status");

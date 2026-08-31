@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { STATUSES, type Status, type Task } from "../types";
-import { TextField } from "./ui/TextField";
-import { Select } from "./ui/Select";
+import { Button } from "./ui/Button";
 import { DateField } from "./ui/DateField";
 import { RichBody } from "./ui/RichBody";
-import { Button } from "./ui/Button";
+import { Select } from "./ui/Select";
 import { StatusDot } from "./ui/StatusDot";
+import { TextField } from "./ui/TextField";
 
 export function TaskModal({
   task,
@@ -74,11 +74,13 @@ export function TaskModal({
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-close is a pointer affordance; Escape and Cancel cover keyboard users
     <div
       className="modal__overlay fixed inset-0 z-10 flex items-start justify-center overflow-y-auto bg-black/40 p-6 pt-[6vh]"
       onClick={onCancel}
       role="presentation"
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: this onClick only stops propagation to the backdrop; it is not an action */}
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
@@ -91,9 +93,7 @@ export function TaskModal({
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2.5">
             <StatusDot status={status} />
-            <h2 className="m-0 text-sm font-semibold">
-              {isNew ? "New task" : "Edit task"}
-            </h2>
+            <h2 className="m-0 text-sm font-semibold">{isNew ? "New task" : "Edit task"}</h2>
           </div>
           <button
             type="button"
@@ -177,7 +177,16 @@ export function TaskModal({
 
 function CloseIcon() {
   return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 16 16"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <path d="M4 4l8 8M12 4l-8 8" />
     </svg>
   );
