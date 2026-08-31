@@ -259,3 +259,4 @@ kanban/
 - The AI agent's CLI operating guide is in `docs/ai-cli.md`.
 - The UI design system (tokens, primitives, semantics) is documented in `docs/design-system.md`.
 - Code quality and the toolchain are documented in `docs/quality.md`.
+- A handoff note for the next agent (deferred features, UX candidates, env quirks) is in `docs/handoff.md`.
