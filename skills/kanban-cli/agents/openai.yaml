@@ -1,0 +1,4 @@
+interface:
+  display_name: "kanban CLI"
+  short_description: "Operate the kanban board via the CLI"
+  default_prompt: "Use $kanban-cli to read the board or create/move/annotate tasks on behalf of the user."

@@ -173,6 +173,28 @@ kanban archive <uuid>
 kanban serve
 ```
 
+## Agent skill
+
+An AI agent can be taught to operate the board correctly with a reusable
+**skill** (a `SKILL.md` in [Agent Skills](https://agentskills.io) format) shipped
+in this repo under `skills/kanban-cli/`. It encodes the data model, the
+everyday commands, the `--json`/`note` conventions, and the rule to use the CLI
+rather than edit raw Markdown.
+
+Install it anywhere with the [Skills CLI](https://skills.sh):
+
+```sh
+# list the skill
+npx skills add ningen/kanban --list
+
+# install for a specific agent (e.g. Codex), global scope
+npx skills add ningen/kanban --skill kanban-cli -g -a codex -y
+```
+
+- Use `-g` for global (`~/<agent>/skills/`) or omit for project scope.
+- Use `-a` to target an agent (opencode, codex, claude-code, cursor, ...).
+- See `docs/ai-cli.md` for the underlying CLI guide.
+
 ## Tech stack
 
 | layer     | tech                         | why |
@@ -212,13 +234,18 @@ kanban/
 ├─ .githooks/          # git hooks (pre-commit quality gate)
 ├─ docs/
 │  ├─ adr/             # Architecture Decision Records
+│  ├─ ai-cli.md        # AI agent CLI guide
+│  ├─ design-system.md # UI design tokens & primitives
 │  └─ quality.md       # toolchain & policy
 ├─ scripts/
 │  └─ check-coverage.ts  # deterministic coverage gate (parses lcov)
+├─ skills/
+│  └─ kanban-cli/      # installable agent skill (npx skills add)
 ├─ src/
 │  ├─ core/            # data contract: schema, repo, operations, uuidv7
 │  ├─ cli/             # kanban CLI
-│  └─ server/          # Bun + Hono (SSE)
+│  ├─ server/          # Bun + Hono (SSE)
+│  └─ ui/              # Vite + React frontend (own package)
 ├─ tasks/ archive/ events.jsonl   # runtime data (gitignored)
 ├─ biome.json
 ├─ bunfig.toml
