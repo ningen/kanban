@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "../../lib/cn";
 import { fieldControl, fieldLabel } from "./fieldStyles";
 import {
@@ -9,6 +10,7 @@ import {
   shiftMonth,
   todayValue,
 } from "../../lib/calendar";
+import { popoverPosition, type PopoverPosition } from "../../lib/popover";
 import { Button } from "./Button";
 
 interface DateFieldProps {
@@ -26,14 +28,63 @@ export function DateField({ label, value, onChange, placeholder }: DateFieldProp
     selected ? [selected.getFullYear(), selected.getMonth()] : todayYearMonth(),
   );
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [position, setPosition] = useState<PopoverPosition | null>(null);
   const grid = monthGrid(view[0], view[1]);
   const today = todayValue();
+
+  // The panel is portalled to the body: the modal's sidebar is a scroll
+  // container, so an absolutely-positioned panel would be clipped by it. Fixed
+  // positioning against the trigger's viewport rect keeps the whole calendar
+  // visible, and re-measuring on scroll/resize keeps it glued to the field.
+  useLayoutEffect(() => {
+    if (!open) {
+      setPosition(null);
+      return;
+    }
+    const place = () => {
+      const trigger = triggerRef.current;
+      const panel = panelRef.current;
+      const content = contentRef.current;
+      if (trigger === null || panel === null || content === null) {
+        return;
+      }
+      // Height comes from the inner wrapper: the panel itself may already be
+      // height-capped, and measuring that would ratchet the cap down on every
+      // reposition. Its rect excludes the panel's borders, so add them back.
+      const border = panel.offsetHeight - panel.clientHeight;
+      setPosition(
+        popoverPosition({
+          anchor: trigger.getBoundingClientRect(),
+          panel: {
+            width: panel.getBoundingClientRect().width,
+            height: content.getBoundingClientRect().height + border,
+          },
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+        }),
+      );
+    };
+    place();
+    // Capture so scrolls inside the modal (not just the window) reposition it.
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, grid.length]);
 
   // close on outside click / Escape
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      // The panel lives in a portal, so it is not inside `wrapRef`.
+      if (wrapRef.current?.contains(target) === true) return;
+      if (panelRef.current?.contains(target) === true) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -52,6 +103,7 @@ export function DateField({ label, value, onChange, placeholder }: DateFieldProp
       <div className="relative" ref={wrapRef}>
         <button
           type="button"
+          ref={triggerRef}
           onClick={() => setOpen((o) => !o)}
           className={cn(
             fieldControl,
@@ -66,87 +118,102 @@ export function DateField({ label, value, onChange, placeholder }: DateFieldProp
           <CalendarIcon />
         </button>
 
-        {open && (
-          <div className="absolute left-0 top-full z-20 mt-2 w-[280px] rounded-lg border border-border bg-surface p-3 shadow-lg">
-            <div className="flex items-center justify-between px-1 pb-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                aria-label="前の月"
-                onClick={() => setView(shiftMonth(view[0], view[1], -1))}
-              >
-                <ChevronIcon dir="left" />
-              </Button>
-              <span className="text-sm font-medium">
-                {MONTH_NAMES[view[1] ?? 0]} {view[0]}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                aria-label="次の月"
-                onClick={() => setView(shiftMonth(view[0], view[1], 1))}
-              >
-                <ChevronIcon dir="right" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-y-1">
-              {WEEKDAYS.map((w) => (
-                <div key={w} className="py-1 text-center text-[11px] font-medium text-text-faint">
-                  {w}
-                </div>
-              ))}
-              {grid.map((day, i) => {
-                if (day === "") return <div key={`b-${i}`} />;
-                const isSelected = day === value;
-                const isToday = day === today;
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      onChange(day);
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      "mx-auto flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",
-                      isSelected
-                        ? "bg-accent text-white"
-                        : "text-text hover:bg-surface-2",
-                      isToday && !isSelected && "font-semibold text-accent",
-                    )}
+        {open &&
+          createPortal(
+            <div
+              ref={panelRef}
+              className="fixed z-30 w-[280px] overflow-y-auto rounded-lg border border-border bg-surface shadow-lg"
+              style={
+                position === null
+                  ? { top: 0, left: 0, visibility: "hidden" }
+                  : { top: position.top, left: position.left, maxHeight: position.maxHeight }
+              }
+            >
+              <div className="p-3" ref={contentRef}>
+                <div className="flex items-center justify-between px-1 pb-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    aria-label="前の月"
+                    onClick={() => setView(shiftMonth(view[0], view[1], -1))}
                   >
-                    {Number(day.slice(-2))}
-                  </button>
-                );
-              })}
-            </div>
+                    <ChevronIcon dir="left" />
+                  </Button>
+                  <span className="text-sm font-medium">
+                    {MONTH_NAMES[view[1] ?? 0]} {view[0]}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    aria-label="次の月"
+                    onClick={() => setView(shiftMonth(view[0], view[1], 1))}
+                  >
+                    <ChevronIcon dir="right" />
+                  </Button>
+                </div>
 
-            <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
-              <button
-                type="button"
-                className="text-xs text-accent hover:underline"
-                onClick={() => onChange(today)}
-              >
-                Today
-              </button>
-              {value.length > 0 && (
-                <button
-                  type="button"
-                  className="text-xs text-text-faint hover:text-text"
-                  onClick={() => {
-                    onChange("");
-                    setOpen(false);
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+                <div className="grid grid-cols-7 gap-y-1">
+                  {WEEKDAYS.map((w) => (
+                    <div
+                      key={w}
+                      className="py-1 text-center text-[11px] font-medium text-text-faint"
+                    >
+                      {w}
+                    </div>
+                  ))}
+                  {grid.map((day, i) => {
+                    if (day === "") return <div key={`b-${i}`} />;
+                    const isSelected = day === value;
+                    const isToday = day === today;
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          onChange(day);
+                          setOpen(false);
+                        }}
+                        className={cn(
+                          "mx-auto flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",
+                          isSelected
+                            ? "bg-accent text-white"
+                            : "text-text hover:bg-surface-2",
+                          isToday && !isSelected && "font-semibold text-accent",
+                        )}
+                      >
+                        {Number(day.slice(-2))}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                  <button
+                    type="button"
+                    className="text-xs text-accent hover:underline"
+                    onClick={() => onChange(today)}
+                  >
+                    Today
+                  </button>
+                  {value.length > 0 && (
+                    <button
+                      type="button"
+                      className="text-xs text-text-faint hover:text-text"
+                      onClick={() => {
+                        onChange("");
+                        setOpen(false);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )}
       </div>
     </div>
   );
