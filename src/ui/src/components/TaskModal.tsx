@@ -29,8 +29,14 @@ export function TaskModal({
   const [error, setError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
 
+  // Focus the title only once, on mount. Keeping this out of the keydown
+  // effect means a re-render (new `onCancel` identity) can't steal focus
+  // away from whatever field the user is actually editing.
   useEffect(() => {
     titleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancel();
     };
