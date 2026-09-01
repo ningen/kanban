@@ -146,7 +146,7 @@ export function App() {
 
   return (
     <div className="app mx-auto max-w-[1440px] min-h-screen p-4">
-      <header className="flex items-center gap-4 py-3 pb-5">
+      <header className="flex items-center gap-4 pt-3 pb-4">
         <h1 className="m-0 text-xl font-bold">kanban</h1>
         <ThemeToggle />
         <div className="relative w-[360px] max-w-full flex-1">
@@ -183,7 +183,10 @@ export function App() {
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
+      </header>
+
+      {allTags.length > 0 && (
+        <div className="-mt-1 mb-5 flex flex-wrap items-center gap-1.5">
           {allTags.map((tag) => (
             <FilterChip
               key={tag}
@@ -194,7 +197,7 @@ export function App() {
             </FilterChip>
           ))}
         </div>
-      </header>
+      )}
 
       {error !== null && (
         <div className="mb-3 rounded-lg bg-danger/15 px-3 py-2 text-sm text-danger">
