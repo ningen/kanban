@@ -91,7 +91,7 @@ export function TaskCard({
       )}
       {task.due !== undefined && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {task.due !== undefined && <DueBadge due={task.due} />}
+          {task.due !== undefined && <DueBadge due={task.due} status={task.status} />}
         </div>
       )}
       {task.updated !== "" && (
