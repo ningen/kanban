@@ -134,7 +134,9 @@ Features (MVP):
 6. **Search & tag filter** — header search box + tag chips.
 7. **SSE auto-reload** — reflects AI changes live.
 
-Deferred: calendar, Gantt, stats dashboard (after `events.jsonl` fills), multi-user/permissions/mobile, due reminders.
+Deferred: calendar, Gantt, stats dashboard page (the `kanban stats` CLI reports
+the numbers; a visual dashboard over the same `StatsReport` is still open),
+multi-user/permissions/mobile, due reminders.
 
 - No router or state-management library. `useState` + server SSE only.
 - UI = one board + one modal.
@@ -167,6 +169,10 @@ kanban note <uuid> "progress…"   # append a Markdown note to the body
 
 kanban search "query"
 kanban search "query" --json
+
+kanban stats                  # board / throughput / dwell / transitions
+kanban stats --period 7       # weekly view over the last 7 days
+kanban stats --json           # structured report
 
 kanban archive <uuid>
 

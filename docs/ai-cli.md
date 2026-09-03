@@ -60,6 +60,11 @@ kanban note <uuid> "- [x] 数字の棚卸しが完了"
 kanban search "レビュー"
 kanban search "レビュー" --json
 
+# Summarize the board + activity (from the event log)
+kanban stats                      # human view
+kanban stats --period 7           # focus the weekly view on 7 days
+kanban stats --json               # structured report
+
 # Archive / delete terminal tasks
 kanban archive <uuid>
 kanban delete <uuid>
@@ -71,7 +76,7 @@ kanban delete <uuid>
    body. `edit --body` replaces the whole body.
 2. **Use `kanban move` for status changes** — it records `actor: "ai"` in
    `events.jsonl`, which is what later statistics/analysis rely on.
-3. **Use `--json` on `list`/`show`/`search`** when you need stable fields to
+3. **Use `--json` on `list`/`show`/`search`/`stats`** when you need stable fields to
    drive decisions instead of parsing human text.
 4. **Use the CLI for rank ordering** (`--rank` on `add`/`edit`/`move`) rather
    than hand-editing `rank` values.

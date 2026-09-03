@@ -10,8 +10,8 @@ with the docs in this repo (`README.md`, `docs/adr/`, `docs/ai-cli.md`,
 - **Core**: data contract (task schema, uuidv7, atomic writes, `events.jsonl`)
   is complete and well-tested in `src/core/`.
 - **CLI**: complete — `list / show / add / edit / move / note / search /
-  archive / delete / serve`, plus `--json` on list/show/search and per-command
-  `--help`. This is the AI's primary interface (ADR-0008).
+  stats / archive / delete / serve`, plus `--json` on list/show/search/stats
+  and per-command `--help`. This is the AI's primary interface (ADR-0008).
 - **Server**: Bun + Hono, REST + SSE, serves the built UI and the board API.
 - **UI**: Vite + React + Tailwind v4, a kanban board, custom date picker
   (`DateField`), Obsidian-style body editor (`RichBody` via `react-markdown`),
@@ -25,10 +25,15 @@ latest work is `feat(skills)`.
 
 The README lists these as deferred. They are the highest-value follow-ups:
 
-1. **Stats dashboard** from `events.jsonl` — the data already records
-   `actor: "ui"|"ai"`, `field`, `from`, `to`, `ts`. A summary (moves per
-   status, AI vs human activity, weekly trends) is the natural next feature.
-   Decide the surface: a dashboard page vs. a CLI command (`kanban stats`).
+1. **Stats dashboard** from `events.jsonl` — the shared stats core
+   (`src/core/stats.ts`) and the CLI command `kanban stats [--period N]
+   [--json]` are now implemented and tested (100% coverage on the core). It
+   reports board summary, weekly throughput/lead time, per-status dwell time,
+   and status transition + actor split. "Today" and week boundaries are
+   anchored to the **machine's local timezone** (tests pin `TZ=UTC` and include
+   a non-UTC case). The **remaining** piece is a visual dashboard page in the
+   UI that renders the same `StatsReport` as an inline panel (see the UX/UI
+   notes above).
 2. **Calendar / Gantt views** — tasks have `due` and `created`/`updated`; a
    time view over `tasks/` is feasible.
 3. **Due reminders** — no notification system exists. Would need a scheduler

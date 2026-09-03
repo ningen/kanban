@@ -28,9 +28,11 @@ import {
   getTask,
   listTasks,
   moveTask,
+  readEvents,
   remove,
 } from "../core/operations";
-import { ACTOR_AI, BOARD_COLUMNS, isStatus, type Status, type Task } from "../core/task";
+import { type StatsReport, summarize } from "../core/stats";
+import { ACTOR_AI, BOARD_COLUMNS, isStatus, STATUSES, type Status, type Task } from "../core/task";
 
 /** Errors that should surface as a usage/exit-1 message, not a stack trace. */
 export class CliError extends Error {}
@@ -101,7 +103,7 @@ export function printTask(t: Task): void {
 }
 
 export const USAGE =
-  "Usage: kanban <command> [args]\nCommands: list, show, add, edit, move, note, search, archive, delete, serve";
+  "Usage: kanban <command> [args]\nCommands: list, show, add, edit, move, note, search, stats, archive, delete, serve";
 
 /** Per-command help, keyed by command name. */
 export const COMMAND_HELP: Record<string, string> = {
@@ -112,6 +114,7 @@ export const COMMAND_HELP: Record<string, string> = {
   move: "move <uuid> <status> [--rank n]\n  Move a task to a status and record the transition.",
   note: "note <uuid> <text>\n  Append a Markdown note to the task's body.",
   search: 'search "<query>" [--json]\n  Search titles, tags, and body text.',
+  stats: "stats [--period 30] [--json]\n  Show board/throughput/dwell/transition statistics.",
   archive: "archive <uuid>\n  Move a task to archive/.",
   delete: "delete <uuid>\n  Permanently remove a task.",
   serve: "serve\n  Start the local web server (serves the built UI if present).",
@@ -305,6 +308,78 @@ export async function cmdSearch(
   for (const t of matches) printTask(t);
 }
 
+function hoursToDays(h: number): string {
+  return `${(h / 24).toFixed(1)}d`;
+}
+
+function fmtHours(h: number): string {
+  return `${h.toFixed(1)}h`;
+}
+
+/** Render a stats report as human-readable text. */
+export function printStats(report: StatsReport): void {
+  const b = report.board;
+  console.log(
+    `Board: ${b.total} total · ${b.active} active · ${b.doing} doing · ${b.done} done · ${b.overdue} overdue`,
+  );
+  const byStatus = STATUSES.map((s) => `${s} ${b.byStatus[s]}`).join(" · ");
+  console.log(`  ${byStatus}\n`);
+
+  console.log(`Throughput (last ${report.periodDays}d)`);
+  const weekly = report.throughput.weekly;
+  if (weekly.length === 0) {
+    console.log("  (no activity)");
+  } else {
+    console.log("  week         created  done");
+    for (const w of weekly) {
+      console.log(
+        `  ${w.weekStart}  ${String(w.created).padStart(7)}  ${String(w.done).padStart(4)}`,
+      );
+    }
+  }
+
+  const lt = report.throughput.leadTime;
+  console.log(`\nLead time (${lt.sample} completed)`);
+  if (lt.sample > 0) {
+    console.log(
+      `  avg ${hoursToDays(lt.avgHours)}   median ${hoursToDays(lt.medianHours)}   p90 ${hoursToDays(lt.p90Hours)}   min ${hoursToDays(lt.minHours)}   max ${hoursToDays(lt.maxHours)}`,
+    );
+  } else {
+    console.log("  (no completed tasks yet)");
+  }
+
+  console.log("\nDwell time (all time)");
+  console.log("  status     visits  total   avg");
+  for (const d of report.dwell) {
+    console.log(
+      `  ${d.status.padEnd(8)} ${String(d.visits).padStart(6)}  ${fmtHours(d.totalHours).padStart(7)}  ${fmtHours(d.avgHours).padStart(6)}`,
+    );
+  }
+
+  const { byMove, byActor } = report.transitions;
+  console.log("\nTransitions");
+  if (byMove.length === 0) {
+    console.log("  (no status moves yet)");
+  } else {
+    for (const m of byMove) {
+      console.log(`  ${m.from} -> ${m.to}    ${m.count}`);
+    }
+  }
+  console.log(`  actor split: ui ${byActor.ui} · ai ${byActor.ai}`);
+}
+
+export async function cmdStats(root: string, flags: Record<string, string | true>): Promise<void> {
+  const events = await readEvents(root);
+  const tasks = await listTasks(root);
+  const periodDays = flagNumber(flags, "period");
+  const report = summarize(events, tasks, periodDays === undefined ? {} : { periodDays });
+  if (flags.json === true) {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+  printStats(report);
+}
+
 /** Append a Markdown note to a task body. */
 export async function cmdNote(
   root: string,
@@ -419,6 +494,9 @@ export async function runCli(args: string[], root?: string): Promise<void> {
       break;
     case "search":
       await cmdSearch(resolvedRoot, flags, positional.slice(1));
+      break;
+    case "stats":
+      await cmdStats(resolvedRoot, flags);
       break;
     case "archive":
       await cmdArchive(resolvedRoot, flags, positional.slice(1));

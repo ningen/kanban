@@ -279,6 +279,40 @@ describe("cli: search, archive, delete", () => {
   });
 });
 
+describe("cli: stats", () => {
+  it("prints a human-readable report", async () => {
+    await run(["add", "A"]);
+    const out = await run(["stats"]);
+    expect(out.some((l) => l.includes("Board:"))).toBe(true);
+    expect(out.some((l) => l.includes("Throughput"))).toBe(true);
+    expect(out.some((l) => l.includes("Dwell time"))).toBe(true);
+    expect(out.some((l) => l.includes("Transitions"))).toBe(true);
+  });
+
+  it("outputs structured JSON with --json", async () => {
+    await run(["add", "A"]);
+    const out = await run(["stats", "--json"]);
+    const report = JSON.parse(out.join("").trim()) as {
+      board: { byStatus: Record<string, number>; total: number };
+      throughput: { weekly: unknown[]; leadTime: { sample: number } };
+    };
+    expect(report.board.total).toBe(1);
+    expect(report.board.byStatus.todo).toBe(1);
+    expect(report.throughput.leadTime.sample).toBe(0);
+  });
+
+  it("honors --period", async () => {
+    const out = await run(["stats", "--period", "7", "--json"]);
+    const report = JSON.parse(out.join("").trim()) as { periodDays: number };
+    expect(report.periodDays).toBe(7);
+  });
+
+  it("shows help for the stats command", async () => {
+    const out = await run(["stats", "--help"]);
+    expect(out.some((l) => l.includes("kanban stats"))).toBe(true);
+  });
+});
+
 describe("cli: cliMain", () => {
   it("maps a CliError to exit code 1", async () => {
     const exit = spyOn(process, "exit").mockImplementation(() => {
